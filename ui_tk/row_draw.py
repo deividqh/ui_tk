@@ -3,6 +3,10 @@ from tkinter import ttk             # Importa los componentes modernos
 from tkinter import filedialog
 import os
 
+import pandas as pd
+import numpy as np
+
+
 # █ ■ █ ■ █ ■ █ ■ █ ■ █ ■ █ ■ █ ■ █ ■ █ ■ █ ■ █ ■ █ ■ █ ■ █ ■ █ ■ █ ■ █ ■ █ 
 class My_FileDialog:
     """
@@ -367,36 +371,40 @@ class My_Tree(ttk.Frame):
         self._actualizar_status()
 
     def get_textos(self) -> list:
+        """ 
+        Devuelve un array con los valores actuales de los Entry.
+        Garantiza que el orden sea exactamente el de lectura de tu matriz (fila por fila)
+        y devuelve únicamente los campos que tengan un registro real.
+        """
         if self.d_textos is None: return []
         
         cab_efectivas = self._obtener_cabeceras_efectivas()
         d_trabajo = self._obtener_d_trabajo(cab_efectivas)
 
         valores = []
-        max_row, max_col = self._obtener_dimensiones(d_trabajo)
-            
-        for r in range(max_row + 1):
-            for c in range(max_col + 1):
-                key = f"{chr(65+c)}{r}"
-                if key not in d_trabajo: continue
-                
-                val_crudo = d_trabajo.get(key, '_')
+        
+        # Recorremos la matriz fila por fila, elemento por elemento
+        for r, row_data in enumerate(d_trabajo):
+            for c, val_crudo in enumerate(row_data):
                 val = self._resolver_indice(val_crudo, cab_efectivas)
                 
                 if isinstance(val, int) and val in self.dicc_entries:
                     valores.append(self.dicc_entries[val].get())
                     
         return valores
+                    
+        return valores
 
     # ■■■■ LÓGICA PRIVADA ■■■■
 
     def _construir_formulario(self):
-        """ Construye internamente el Grid de Labels y Entries según d_textos. """
+        """ Construye internamente el Grid de Labels y Entries basándose en la MATRIZ d_textos. """
         if self.d_textos is None: return
             
         cab_efectivas = self._obtener_cabeceras_efectivas()
         if not cab_efectivas: return 
             
+        # Limpieza por si venimos de un repintado dinámico
         for widget in self.frm_form.winfo_children():
             widget.destroy()
         self.dicc_entries.clear()
@@ -404,19 +412,16 @@ class My_Tree(ttk.Frame):
         d_trabajo = self._obtener_d_trabajo(cab_efectivas)
         max_row, max_col = self._obtener_dimensiones(d_trabajo)
         
+        # Configuramos los pesos de las columnas de la rejilla interna
         for c in range((max_col + 1) * 2):
             self.frm_form.columnconfigure(c, weight=1 if c % 2 != 0 else 0)
 
-        for r in range(max_row + 1):
+        # Iteramos de forma limpia por índice y contenido de la matriz
+        for r, row_data in enumerate(d_trabajo):
             last_entry = None  
             
-            for c in range(max_col + 1):
-                key = f"{chr(65+c)}{r}"
-                if key not in d_trabajo: continue
-                
-                val_crudo = d_trabajo.get(key, '_')
+            for c, val_crudo in enumerate(row_data):
                 val = self._resolver_indice(val_crudo, cab_efectivas)
-                
                 col_real = c * 2 
                 
                 if isinstance(val, int) and 0 <= val < len(cab_efectivas):
@@ -431,6 +436,7 @@ class My_Tree(ttk.Frame):
                     
                 elif val == '+':
                     if last_entry:
+                        # Hacemos colspan expandiendo el último Entry registrado de esta fila
                         span_actual = last_entry.grid_info().get('columnspan', 1)
                         last_entry.grid_configure(columnspan=span_actual + 2)
 
@@ -521,24 +527,18 @@ class My_Tree(ttk.Frame):
                 self.tree.column(cols_a_mostrar[i], width=100, anchor="w")
 
     def _obtener_dimensiones(self, d_trabajo):
-        """ Ignora las claves mal formadas y devuelve dimensiones """
-        max_row, max_col = 0, 0
-        if not d_trabajo: return max_row, max_col
-        
-        for k in d_trabajo.keys():
-            try:
-                c, r = ord(k[0].upper()) - 65, int(k[1:])
-                max_row, max_col = max(max_row, r), max(max_col, c)
-            except: 
-                continue 
+        """ Devuelve las dimensiones máximas (max_row, max_col) de la matriz de disposición. """
+        if not d_trabajo: 
+            return 0, 0
+        max_row = len(d_trabajo) - 1
+        max_col = max((len(row) for row in d_trabajo), default=0) - 1
         return max_row, max_col
     
     def _obtener_d_trabajo(self, cab_efectivas):
-        """ Genera el d_textos secuencial A0, A1... si el usuario pasó un {} """
-        d_trabajo = self.d_textos.copy() if self.d_textos is not None else None
-        if d_trabajo == {}:
-            d_trabajo = {f"A{i}": i for i in range(len(cab_efectivas))}
-        return d_trabajo
+        """ Retorna la matriz de trabajo. Si es {} o [], genera una secuencia hacia abajo. """
+        if self.d_textos == {} or self.d_textos == []:
+            return [[i] for i in range(len(cab_efectivas))]
+        return self.d_textos
     
     def _obtener_cabeceras_efectivas(self):
         """ Decide si usar las cabeceras dadas o generar 'col0', 'col1'... """
@@ -548,6 +548,75 @@ class My_Tree(ttk.Frame):
             num_cols = len(self.datos[0]) if isinstance(self.datos[0], (list, tuple)) else 1
             return [f"col{i}" for i in range(num_cols)]
         return []
+
+
+# █ ■ █ ■ █ ■ █ ■ █ ■ █ ■ █ ■ █ ■ █ ■ █ ■ █ ■ █ ■ █ ■ █ ■ █ ■ █ ■ █ ■ █ ■ █
+class My_Radio(ttk.LabelFrame):
+    """
+    Widget compuesto (LabelFrame).
+    Contiene un grupo de tk.Radiobutton generados dinámicamente a partir de un array de diccionarios.
+    Gestiona su propia variable de control automáticamente.
+    """
+    def __init__(self, parent, cont_rd, titulo="", orientacion="vertical", **kwargs):
+        # 1. Configuración del LabelFrame (con o sin título)
+        if titulo:
+            super().__init__(parent, text=titulo, **kwargs)
+        else:
+            super().__init__(parent, relief="flat", borderwidth=0, **kwargs)
+
+        self.cont_rd = cont_rd
+        self.radios = []
+
+        # 2. Detector Automático de Tipo de Variable
+        if self.cont_rd and len(self.cont_rd) > 0:
+            primer_valor = self.cont_rd[0].get("value", "")
+            
+            if isinstance(primer_valor, bool):
+                self.var = tk.BooleanVar()
+            elif isinstance(primer_valor, int):
+                self.var = tk.IntVar()
+            elif isinstance(primer_valor, float):
+                self.var = tk.DoubleVar()
+            else:
+                self.var = tk.StringVar()
+            
+            # Seleccionamos la primera opción por defecto para que no aparezcan todos desmarcados
+            self.var.set(primer_valor)
+        else:
+            self.var = tk.StringVar()
+
+        # 3. Construcción de los tk.Radiobutton
+        for item in self.cont_rd:
+            texto = item.get("texto", "Opción")
+            valor = item.get("value", texto)
+            
+            rb = tk.Radiobutton(self, text=texto, value=valor, variable=self.var)
+            
+            # Empaquetado según la orientación deseada
+            if orientacion.lower() == "horizontal":
+                rb.pack(side="left", padx=(5, 10), pady=5)
+            else:
+                rb.pack(side="top", anchor="w", padx=5, pady=2)
+                
+            self.radios.append(rb)
+
+    # ■■■■ MÉTODOS PÚBLICOS FUNCIONALES ■■■■
+    
+    def get_valor(self):
+        """ Devuelve el valor numérico/texto de la opción seleccionada. """
+        return self.var.get()
+
+    def set_valor(self, valor):
+        """ Cambia la selección programáticamente. """
+        self.var.set(valor)
+
+    def set_command(self, comando):
+        """ 
+        Asigna una función que se disparará automáticamente al cambiar de opción. 
+        Ejemplo: mi_radio.set_command(lambda: print(mi_radio.get_valor()))
+        """
+        for rb in self.radios:
+            rb.config(command=comando)
     
 
 # █ ■ █ ■ █ ■ █ ■ █ ■ █ ■ █ ■ █ ■ █ ■ █ ■ █ ■ █ ■ █ ■ █ ■ █ ■ █ ■ █ ■ █ ■ █
@@ -1020,11 +1089,28 @@ class Nivel_2:
                       b_botones=True, 
                       b_registro=True, 
                       d_textos=None):
+        """
+        Crea un componente TreeView de ttk.
+        """
         nuevo_tree = My_Tree( parent=self.frame,
             titulo=titulo, cabeceras=cabeceras, datos=datos,
             b_botones=b_botones, b_registro=b_registro, d_textos=d_textos
         )
         return nuevo_tree
+
+    def my_radio(self, cont_rd, titulo="", orientacion="vertical"):
+        """
+        Crea un componente My_Radio.
+        - cont_rd: array de diccionarios [{'texto': 'op1', 'value': 1}, ...]
+        - orientacion: "vertical" (por defecto) u "horizontal"
+        """
+        nuevo_radio = My_Radio(
+            parent=self.frame,
+            cont_rd=cont_rd,
+            titulo=titulo,
+            orientacion=orientacion
+        )
+        return nuevo_radio
 
 
 # ██████████████████████████████████████████

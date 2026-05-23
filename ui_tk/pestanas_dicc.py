@@ -2,21 +2,25 @@ import tkinter as tk
 from tkinter import ttk
 
 
-class StepByStab(ttk.Frame):
+class Pestanas_by_Step(ttk.Frame):
     """Notebook secuencial configurable mediante un diccionario {clave: titulo}
     Permite avanzar y bloquear pestañas tanto por código (claves) como por interfaz (índices).
     """
-
-    def __init__(self, contenedor, configuracion_pestanas, b_botones=True):
+    def __init__(self, contenedor, configuracion_pestanas, b_botones=True, mode_step=True):
         """ 
         contenedor: el contenedor del Frame de Pestañas.
         configuracion_pestanas: un diccionario key = slug:str , value = 'Titulo de las Pestañas'
         b_botones: True, muestra botones para avanzar y bloquear. False no los muestra.
+        mode_step: True (por defecto) activa el comportamiento secuencial de avanzar/bloquear. 
+                   False permite navegación libre por todas las pestañas sin bloqueos.
         """
         super().__init__(contenedor)
 
         if not configuracion_pestanas:
             raise ValueError("El diccionario de configuración no puede estar vacío.")
+
+        # Guardamos el modo en la instancia
+        self.mode_step = mode_step
 
         # Separamos las claves y los títulos manteniendo el orden estricto de inserción
         self.claves  = list(configuracion_pestanas.keys())
@@ -27,13 +31,61 @@ class StepByStab(ttk.Frame):
 
         self.pestanas = []
         self._crear_pestanas()
-        self.blok_from(1) # Bloquea todo menos la primera al iniciar
 
-        # ■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■
-        # PANEL DE CONTROL INTEGRADO (opcional)
-        # ■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■
-        if b_botones:
-            self._crear_panel_control()
+        # ==========================================
+        # CONTROL DE MODOS (Secuencial vs Libre)
+        # ==========================================
+        if self.mode_step:
+            # Comportamiento clásico por pasos: Bloquea todo menos la primera al iniciar
+            self.blok_from(1) 
+            
+            # Vinculamos el evento de protección para que no salten a pestañas bloqueadas
+            self.notebook.bind("<<NotebookTabChanged>>", self._on_tab_changed)
+            
+            # --- PANEL DE CONTROL GLOBAL (Solo si b_botones es True y estamos en modo paso a paso) ---
+            if b_botones:
+                panel_control = ttk.Frame(self)
+                panel_control.pack(fill="x", padx=10, pady=10)
+
+                self.btn_avanzar = ttk.Button(
+                    panel_control,
+                    text="Validar y Avanzar ➡️",
+                    command=lambda: self.go_next(self.notebook.index("current"))
+                )
+                self.btn_avanzar.pack(side="right")
+        else:
+            # Modo libre: Todas las pestañas están desbloqueadas desde el principio,
+            # no hay capturador de eventos de bloqueo ni botonera inferior.
+            pass
+
+
+    # def __init__(self, contenedor, configuracion_pestanas, b_botones=True):
+    #     """ 
+    #     contenedor: el contenedor del Frame de Pestañas.
+    #     configuracion_pestanas: un diccionario key = slug:str , value = 'Titulo de las Pestañas'
+    #     b_botones: True, muestra botones para avanzar y bloquear. False no los muestra.
+    #     """
+    #     super().__init__(contenedor)
+
+    #     if not configuracion_pestanas:
+    #         raise ValueError("El diccionario de configuración no puede estar vacío.")
+
+    #     # Separamos las claves y los títulos manteniendo el orden estricto de inserción
+    #     self.claves  = list(configuracion_pestanas.keys())
+    #     self.titulos = list(configuracion_pestanas.values())
+        
+    #     self.notebook = ttk.Notebook(self)
+    #     self.notebook.pack(fill="both", expand=True)
+
+    #     self.pestanas = []
+    #     self._crear_pestanas()
+    #     self.blok_from(1) # Bloquea todo menos la primera al iniciar
+
+    #     # ■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■
+    #     # PANEL DE CONTROL INTEGRADO (opcional)
+    #     # ■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■
+    #     if b_botones:
+    #         self._crear_panel_control()
 
     def _crear_pestanas(self):
         """ ■ Crea las pestañas introducidas en la configuración. """
@@ -115,7 +167,7 @@ class StepByStab(ttk.Frame):
 #         "graf": "Gráficas"
 #     }
 
-#     TABs = StepByStab(ventana, config)
+#     TABs = Pestanas_by_Step(ventana, config)
 #     TABs.pack(fill="both", expand=True, padx=10, pady=10)
 
 #     # --- INYECTANDO CONTROLES EN LAS PESTAÑAS (Usando tus llaves custom) ---

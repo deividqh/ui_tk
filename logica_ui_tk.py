@@ -22,7 +22,7 @@ def mostrar_alerta(texto_alerta):
 
 
 
-def al_cambiar(estado_checkbox):
+def chk_estado(estado_checkbox):
     if estado_checkbox.get():
         print("El checkbox está MARCADO")
     else:

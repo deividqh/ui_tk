@@ -3,9 +3,9 @@ import tkinter as tk
 from tkinter import ttk  # Importa los componentes modernos
 import os               # SISTEMA OPERATIVO(PARA LIMPIAR LA TERMINAL)
 # ■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■
-from ui_tk.pestanas_dicc import StepByStab 
+from ui_tk.pestanas_dicc import Pestanas_by_Step 
 from ui_tk.row_draw import Nivel_2
-import comandos_ui_tk as cmd
+import logica_ui_tk as cmd
 
 def main():
     """ Quiero poner una de pestañas y en cada pestaña un Frame al menos de prueba """
@@ -22,10 +22,11 @@ def main():
         "alg": "Algoritmo/Modelo",
         "met": "Métricas",
         "graf": "Gráficas",
+        'tab6': 'Tab 6',
     }
     a=1
     b=2
-    TABS = StepByStab(ventana, configuracion_pestanas, b_botones = True)
+    TABS = Pestanas_by_Step(ventana, configuracion_pestanas, b_botones = True, mode_step=False)
     TABS.pack(fill="both", expand=True, padx=10, pady=10)
 
     # ■■ ■■ ■■ ■■ ■■ ■■ ■■ ■■ ■■ ■■ ■■ ■■ ■■ ■■ ■■ ■■ ■■ ■■ ■■ ■■ ■■ ■■ ■■ ■■ 
@@ -70,25 +71,35 @@ def main():
     # ■■ ■■ ■■ ■■ ■■ ■■ ■■ ■■ ■■ ■■ ■■ ■■ ■■ ■■ ■■ ■■ ■■ ■■ ■■ ■■ ■■ ■■ ■■ ■■ 
     # FRAME PARA LA PESTAÑA SPLIT
     # ■■ ■■ ■■ ■■ ■■ ■■ ■■ ■■ ■■ ■■ ■■ ■■ ■■ ■■ ■■ ■■ ■■ ■■ ■■ ■■ ■■ ■■ ■■ ■■ 
-    F2 = Nivel_2(TABS.get_p('split'), shape="5x6", padx=15, pady=7)    
+    F2 = Nivel_2(TABS.get_p('split'), shape="10x6", padx=15, pady=7)    
     # ■ WIDGETS
     # •
-    estado_checkbox = tk.BooleanVar(value=False)
-    checkbox = ttk.Checkbutton( F2.frame, text="Boton de Check:", variable = estado_checkbox, 
-                                command=lambda: cmd.al_cambiar( estado_checkbox ) )
+    chk_st = tk.BooleanVar(value=False)
+    texto = "Boton de Check:"
+    checkbox = ttk.Checkbutton( F2.frame, text=texto, variable = chk_st, command=lambda: cmd.chk_estado( chk_st ) )
     # • 
-    l_slide, slide, v_slide = F2.my_slide(texto="■ Split (Train/Test)", 
-                                          desde=0, hasta=10, 
-                                          valor_inicial=3,
-                                          tipo_dato=tk.DoubleVar
-                                          )
+    texto = "■ Split (Train/Test)"
+    l_slide, slide, v_slide = F2.my_slide(texto= texto, desde=0, hasta=10, valor_inicial=3,tipo_dato=tk.DoubleVar )
+    # • 
+    # Definimos las opciones
+    opciones_algoritmo = [
+        {"texto": "Random Forest", "value": 1},
+        {"texto": "XGBoost", "value": 2},
+        {"texto": "Regresión Logística", "value": 3}
+    ]
+    # Creamos el control con título (Con borde nativo)
+    radio_con_titulo = F2.my_radio(titulo="■ Selecciona el Algoritmo", cont_rd=opciones_algoritmo, orientacion="vertical" )
+    # Creamos el control SIN título (Invisible / Flat)
+    opciones_booleanas = [{"texto": "Sí", "value": True}, {"texto": "No", "value": False}]
+    radio_sin_titulo = F2.my_radio(titulo="", cont_rd=opciones_booleanas, orientacion="horizontal")
     # ■  MATRIZ
     matrix_F2 = [
-        [] ,
         [checkbox, '+', '+'],                                             
-        [ '+', '+', '+', '+', '+', '+'] ,
         [l_slide, slide, '+', '+', '+', v_slide] ,
+        [radio_con_titulo, '_', '_',  '', ''] ,
         [ '+', '+', '+', '+', '+', '+'] ,
+        [] , 
+        [radio_sin_titulo] ,
     ]
     # ■  DIBUJO
     F2.draw(matrix = matrix_F2)
@@ -114,6 +125,54 @@ def main():
 
     # Los datos se pueden sacar de un archivo csv, json, base de datos...
     # ahora creo unos datos sinteticos para mostrar el control 
+    titulo = "■ BDatos de Clientes"    
+    arbol_vacio = F4.my_tree(titulo="•vacio•" )    
+    
+    btn_set_cab = tk.Button(F4.frame, text="Inyectar Cabeceras", 
+                            command=lambda: arbol_vacio.set_feature_names(["A", "B", "C"]))
+    matrix_F4 = [
+        [arbol_vacio, '+', '+', '+', '+', '+'],                                             
+        [],
+        [btn_set_cab],                                             
+    ]
+    F4.draw(matrix = matrix_F4)
+
+    # ■■ ■■ ■■ ■■ ■■ ■■ ■■ ■■ ■■ ■■ ■■ ■■ ■■ ■■ ■■ ■■ ■■ ■■ ■■ ■■ ■■ ■■ ■■ ■■ 
+    # FRAME PARA LA PESTAÑA 'GRAFICOS'
+    # ■■ ■■ ■■ ■■ ■■ ■■ ■■ ■■ ■■ ■■ ■■ ■■ ■■ ■■ ■■ ■■ ■■ ■■ ■■ ■■ ■■ ■■ ■■ ■■ 
+    F5 = Nivel_2(TABS.get_p('graf'), shape="6x6", padx=15, pady=7)    
+
+    # Los datos se pueden sacar de un archivo csv, json, base de datos...
+    # ahora creo unos datos sinteticos para mostrar el control 
+    datos_ok = [
+        (1, "Ana", "García", "López", "555-1234", "Madrid"),
+        (1, "Marcos", "Rojas", "Márquez", "3333-1234", "Vigo"),
+        (1, "María", "Saturno", "Obradoiro", "353-1234", "Murcia"),
+        (2, "Juan", "Pérez", "Gómez", "111-1234", "Las Palmas de Gran Canaria"),
+    ]
+    # En caso de que no se metan cabeceras, se escribiran igualmente los datos sinteticos
+    cab = ["ID", "Nombre", "Apellido 1", "Apellido 2", "Teléfono", "Ciudad"]    
+    titulo = "■ BDatos de Clientes"
+    dicc = [[1], [2,3],[4 , 5, 7]]
+    arbol_not_features = F5.my_tree(titulo="■■",  datos=datos_ok, d_textos = dicc )    
+    
+    btn_CAB = tk.Button(F5.frame, text="Inyectar Cabeceras", 
+                                  command=lambda: arbol_not_features.set_feature_names(cab))
+    matrix_F5 = [
+        [arbol_not_features, '+', '+', '+', '+', '+'] ,
+        [] ,
+        [btn_CAB] ,
+    ]
+
+    F5.draw(matrix = matrix_F5)
+
+    # ■■ ■■ ■■ ■■ ■■ ■■ ■■ ■■ ■■ ■■ ■■ ■■ ■■ ■■ ■■ ■■ ■■ ■■ ■■ ■■ ■■ ■■ ■■ ■■ 
+    # FRAME PARA LA PESTAÑA 'Tab6'
+    # ■■ ■■ ■■ ■■ ■■ ■■ ■■ ■■ ■■ ■■ ■■ ■■ ■■ ■■ ■■ ■■ ■■ ■■ ■■ ■■ ■■ ■■ ■■ ■■ 
+    F6 = Nivel_2(TABS.get_p('tab6'), shape="1x1", padx=15, pady=7)    
+
+    # Los datos se pueden sacar de un archivo csv, json, base de datos...
+    # ahora creo unos datos sinteticos para mostrar el control 
     datos_ok = [
         (1, "Ana", "García", "López", "555-1234", "Madrid"),
         (1, "Marcos", "Rojas", "Márquez", "3333-1234", "Vigo"),
@@ -123,31 +182,20 @@ def main():
     # En caso de que no se metan cabeceras, se escribiran igualmente los datos sinteticos
     cab = ["ID", "Nombre", "Apellido 1", "Apellido 2", "Teléfono", "Ciudad"]    
     # posicion de los textos.
-    dicc = {'A0': cab[0], 'B0': "Nombre",  'C0': '+',       'D0': '+' ,  
-            'A1': cab[2], 'B1': "+" , 	   'C1': cab[3],    'D1': '+' , 
-            'A2': "_",    'B2': "Ciudad",  'C2': cab[4],    'D2': cab[5] , 
-    } 
-    titulo = "■ BDatos de Clientes"
-    mi_tabla = F4.my_tree(titulo=titulo, cabeceras=cab, datos=datos_ok, d_textos = dicc )    
-    arbol_not_features = F4.my_tree(titulo="■■",  datos=datos_ok, d_textos = dicc )    
-    arbol_vacio = F4.my_tree(titulo="•vacio•" )    
-    
-    btn_set_cab = tk.Button(F4.frame, text="Inyectar Cabeceras", 
-                            command=lambda: arbol_vacio.set_feature_names(["A", "B", "C"]))
-    matrix_F4 = [
-        # [arbol_not_features] ,
-        [arbol_vacio, '+', '+', '+', '+', '+'],                                             
-        [btn_set_cab],                                             
-        # [mi_tabla, '+', '+', '+', '+', '+'] ,
+    matriz_disposicion = [
+        ["Nombre", "_", "_"],               
+        [],                                       
+        ["Apellido 1", "+", "Apellido 2", "+"],   
+        ["Ciudad", "Teléfono"]                    
     ]
+    titulo = "■ BDatos de Clientes"
+    arbol = F6.my_tree(titulo=titulo, cabeceras=cab, datos=datos_ok, d_textos = matriz_disposicion )    
+    matrix_F6 = [
+        [arbol,] ,
+    ]
+    F6.draw(matrix = matrix_F6)
 
-    F4.draw(matrix = matrix_F4)
 
-    # Le damos a la fila 2 de F4 la capacidad de absorber el espacio sobrante en vertical
-    # F4.frame.rowconfigure(2, weight=1)
-    F4.frame.rowconfigure(0, weight=1)
-
-    # btn_del.config(command=lambda: cmd.limpiar_textos(  ))
     # • • • — — — • • •
     ventana.mainloop()
     # • • • — — — • • •
