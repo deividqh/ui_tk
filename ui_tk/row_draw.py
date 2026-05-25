@@ -8,23 +8,39 @@ import numpy as np
 
 
 # █ ■ █ ■ █ ■ █ ■ █ ■ █ ■ █ ■ █ ■ █ ■ █ ■ █ ■ █ ■ █ ■ █ ■ █ ■ █ ■ █ ■ █ ■ █ 
-class My_FileDialog:
+class My_FileDialog(ttk.Frame):
     """
-    Widget compuesto: Entry + Button que lanza un FileDialog.
-    Tiene dos modos de retorno, split = True / False:
+    Widget compuesto (KISS). Hereda de ttk.Frame (invisible).
+    Si se pasa 'titulo', genera un ttk.LabelFrame interno.
+    Contiene un Entry y un Botón para buscar archivos con soporte para comandos de evento.
     """
-    def __init__(self, parent, texto_boton, title="Seleccionar Archivo",
-                 initialdir=None, filetypes=None, entry_width=40):
+    def __init__(self, parent, texto_boton="Buscar", titulo="", rel_coords="e",
+                 title_dialog="Seleccionar Archivo", initialdir=None, filetypes=None, entry_width=40, command=None):
         
-        # Variable de control
+        super().__init__(parent)
+        
+        # Validamos coordenadas relativas
+        self.rel_coords = rel_coords.lower().strip()
+        if self.rel_coords not in ["n", "s", "e", "w"]:
+            self.rel_coords = "e"
+
+        # Guardamos el comando de evento (callback)
+        self._command = command
+
+        # ==========================================
+        # 1. CONTENEDOR INTELIGENTE
+        # ==========================================
+        if titulo and titulo.strip() != '':
+            self.box = ttk.LabelFrame(self, text=titulo)
+            self.box.pack(fill="both", expand=True, padx=2, pady=2)
+        else:
+            self.box = self
+
+        # ==========================================
+        # 2. CONFIGURACIÓN DEL DIÁLOGO BÁSICO
+        # ==========================================
         self.var_ruta = tk.StringVar(value="")
-
-        # ■ Widgets sueltos (hijos de 'parent')
-        self.entry = ttk.Entry(parent, textvariable=self.var_ruta, width=entry_width)
-        self.btn = ttk.Button(parent, text=texto_boton, command=self._abrir_dialogo)
-
-        # ■ Configuración del diálogo
-        self._titulo = title
+        self._title_dialog = title_dialog
         self._dir_inicial = initialdir if initialdir else os.path.dirname(os.path.abspath(__file__))
         self._tipos = filetypes if filetypes else [
             ("Todos los archivos", "*.*"),
@@ -33,86 +49,136 @@ class My_FileDialog:
             ("Archivos de texto", "*.txt")
         ]
 
+        # ==========================================
+        # 3. WIDGETS INTERNOS DIRECTAMENTE EN LA CAJA
+        # ==========================================
+        self.entry = ttk.Entry(self.box, textvariable=self.var_ruta, width=entry_width)
+        self.btn = ttk.Button(self.box, text=texto_boton, command=self._abrir_dialogo)
+
+        # ==========================================
+        # 4. EMPAQUETADO CARDINAL SIMPLE
+        # ==========================================
+        if self.rel_coords == "n":
+            self.btn.pack(side="top", pady=(2, 0))
+            self.entry.pack(side="top", fill="x", expand=True, pady=(0, 2))
+        elif self.rel_coords == "s":
+            self.entry.pack(side="top", fill="x", expand=True, pady=(2, 0))
+            self.btn.pack(side="top", pady=(0, 2))
+        elif self.rel_coords == "w":
+            self.btn.pack(side="left", padx=(5, 5))
+            self.entry.pack(side="left", fill="x", expand=True) 
+        else: # "e"
+            self.entry.pack(side="left", fill="x", expand=True) 
+            self.btn.pack(side="left", padx=(5, 5))
+            
+    # ■■■■ MÉTODOS PÚBLICOS E INTERNOS ■■■■
+
     def _abrir_dialogo(self):
-        archivo = filedialog.askopenfilename(
-            parent=self.entry.winfo_toplevel(),   # ← CORREGIDO
-            title=self._titulo,
+        ruta = filedialog.askopenfilename(
+            title=self._title_dialog,
             initialdir=self._dir_inicial,
             filetypes=self._tipos
         )
-        if archivo:
-            self.var_ruta.set(archivo)
-            self.entry.xview_moveto(1.0)
-        pass
+        if ruta:
+            self.var_ruta.set(ruta)
+            self.entry.xview_moveto(1) # Scroll al final para ver el nombre
+            
+            # 🔄 ¡MAGIA REACTIVA! Si hay una función vinculada, la disparamos pasándole la ruta
+            if self._command and callable(self._command):
+                self._command(ruta)
+
+    def set_command(self, nuevo_comando):
+        """ Asigna o cambia dinámicamente la función que se ejecuta al seleccionar un archivo. """
+        self._command = nuevo_comando
+
     def get_ruta(self):
-        """Devuelve la ruta completa seleccionada."""
         return self.var_ruta.get()
 
-    def set_ruta(self, ruta):
-        """Establece manualmente la ruta en el Entry."""
-        self.var_ruta.set(ruta)
-
-    def get_ruta_abreviada(self, numpartes=2):
-        """Devuelve la ruta acortada: .../ultima_carpeta/archivo."""
-        ruta = self.var_ruta.get()
-        if not ruta:
-            return ""
-        partes = ruta.replace("\\", "/").split("/")
-        if len(partes) <= numpartes:
-            return ruta
-        ultimas = partes[-numpartes:]
-        ruta_corta = os.path.join("...", *ultimas)
-        return ruta_corta
+    def set_ruta(self, nueva_ruta):
+        self.var_ruta.set(nueva_ruta)    
 
 # █ ■ █ ■ █ ■ █ ■ █ ■ █ ■ █ ■ █ ■ █ ■ █ ■ █ ■ █ ■ █ ■ █ ■ █ ■ █ ■ █ ■ █ ■ █
-class My_Slide:
+class My_Slide(ttk.Frame):
     """
-    Widget compuesto: Label + Scale/Slide + Label_Resultado.
+    Widget compuesto (KISS). Hereda de ttk.Frame (invisible).
+    Si se pasa 'texto_label', genera un ttk.LabelFrame interno.
     """
     def __init__(self, parent, tipo_dato=tk.IntVar, tipo_slide="scale", 
-                 texto_label='', valor_inicial=5, desde=0, hasta=10):
+                 texto_label='', valor_inicial=5, desde=0, hasta=10, rel_coords="e"):
+        
+        super().__init__(parent)
         
         self.valor_ini = valor_inicial 
         self.from_ = desde
         self.to_ = hasta
-        self.tipo_dato_cls = tipo_dato  # Guardamos la clase para saber cómo formatear luego
+        self.tipo_dato_cls = tipo_dato  
+        
+        self.rel_coords = rel_coords.lower().strip()
+        if self.rel_coords not in ["n", "s", "e", "w"]:
+            self.rel_coords = "e"
 
-        # 1. Instanciamos la variable de Tkinter del tipo solicitado
+        # ==========================================
+        # 1. CONTENEDOR INTELIGENTE (IGUAL QUE MY_RADIO)
+        # ==========================================
+        if texto_label and texto_label.strip() != '':
+            self.box = ttk.LabelFrame(self, text=texto_label)
+            # Se empaqueta llenando el espacio, con un poco de margen interior
+            self.box.pack(fill="both", expand=True, padx=2, pady=2)
+        else:
+            self.box = self
+
+        # ==========================================
+        # 2. VARIABLE Y FORMATEO
+        # ==========================================
         self.valor_objeto = self.tipo_dato_cls(value=valor_inicial)
 
-        # ■ Función interna para formatear el texto según el tipo de variable
         def _formatear(val):
             if self.tipo_dato_cls == tk.DoubleVar:
                 return f"{float(val):.2f}"
             else:
                 return f"{int(float(val))}"
 
-        # 2. Label de título
-        self.lbl_texto = ttk.Label(parent, text=texto_label)
+        # ==========================================
+        # 3. WIDGETS INTERNOS DIRECTAMENTE EN LA CAJA
+        # ==========================================
+        self.lbl_valor = ttk.Label(self.box, text=_formatear(valor_inicial))
         
-        # 3. Label de valor (inicializado con la función de formato)
-        self.lbl_valor = ttk.Label(parent, text=_formatear(valor_inicial))
-        
-        # 4. Bifurcación ttk.Scale ("scale") vs tk.Scale ("slide")
-        tipo_slid = tipo_slide.lower().strip()
-        if tipo_slide == 'slide':
-            # Usamos tk.Scale (le quitamos su propio showvalue porque usamos nuestro lbl_valor)
+        tipo_slide_limpio = tipo_slide.lower().strip()
+        if tipo_slide_limpio == 'slide':
             self.obj = tk.Scale(
-                parent, from_=desde, to=hasta, 
+                self.box, from_=desde, to=hasta, 
                 variable=self.valor_objeto, orient=tk.HORIZONTAL,
                 showvalue=False,
                 command=lambda val: self.lbl_valor.config(text=_formatear(val))
             )
-        elif tipo_slide == 'scale':
-            # Por defecto usamos ttk.Scale ("scale")
+        else:
             self.obj = ttk.Scale(
-                parent, from_=desde, to=hasta, 
+                self.box, from_=desde, to=hasta, 
                 variable=self.valor_objeto, orient=tk.HORIZONTAL,
                 command=lambda val: self.lbl_valor.config(text=_formatear(val))
             )
-        else:
-            raise ValueError(f"Tipo de slide desconocido: '{tipo_slide}'. Use 'scale' o 'slide'.")
 
+        # ==========================================
+        # 4. EMPAQUETADO CARDINAL SIMPLE (SIN EXPANSIÓN VERTICAL)
+        # ==========================================
+        if self.rel_coords == "n":
+            self.lbl_valor.pack(side="top", pady=(2, 0))
+            self.obj.pack(side="top", fill="x", pady=(0, 2))
+        elif self.rel_coords == "s":
+            self.obj.pack(side="top", fill="x", pady=(2, 0))
+            self.lbl_valor.pack(side="top", pady=(0, 2))
+        elif self.rel_coords == "w":
+            self.lbl_valor.pack(side="left", padx=(5, 5))
+            self.obj.pack(side="left", fill="x", expand=True) # expand solo horizontal
+        else: # "e"
+            self.obj.pack(side="left", fill="x", expand=True) # expand solo horizontal
+            self.lbl_valor.pack(side="left", padx=(5, 5))
+
+        # Propiedad simulada por compatibilidad
+        # self.lbl_texto = ttk.Label(self, text="")
+
+    # ■■■■ MÉTODOS PÚBLICOS DE COMUNICACIÓN (INTACTOS) ■■■■
+    
     def get_valor(self):
         """ Devuelve el valor del slide en su formato correcto. """
         return self.valor_objeto.get()
@@ -127,11 +193,9 @@ class My_Slide:
                 self.lbl_valor.config(text=f"{int(float(valor))}")
 
     def reset(self):
-        """ Pone el Scale en su valor incial. """
+        """ Pone el Scale en su valor inicial. """
         if self.valor_ini is not None: 
             self.set_valor(self.valor_ini)
-
-
 
 # █ ■ █ ■ █ ■ █ ■ █ ■ █ ■ █ ■ █ ■ █ ■ █ ■ █ ■ █ ■ █ ■ █ ■ █ ■ █ ■ █ ■ █ ■ █
 class My_Listbox(ttk.Frame):
@@ -262,8 +326,14 @@ class My_Tree(ttk.Frame):
     Contiene un Treeview, botones de navegación (opcionales) y un formulario dinámico 
     autogenerado a partir de d_textos, todo integrado en un único bloque sólido.
     """
-    def __init__(self, parent, titulo="", cabeceras=None, datos=None, 
-                 b_botones=True, b_registro=True, d_textos=None, **kwargs):
+    def __init__(self, parent, 
+                        titulo="", 
+                        cabeceras=None, 
+                        datos=None, 
+                        b_botones=True, 
+                        b_registro=True, 
+                        d_textos=None, 
+                        **kwargs):
         super().__init__(parent, **kwargs)
         
         self.cabeceras = list(cabeceras) if cabeceras else []
@@ -549,27 +619,148 @@ class My_Tree(ttk.Frame):
             return [f"col{i}" for i in range(num_cols)]
         return []
 
+# █ ■ █ ■ █ ■ █ ■ █ ■ █ ■ █ ■ █ ■ █ ■ █ ■ █ ■ █ ■ █ ■ █ ■ █ ■ █ ■ █ ■ █ ■ █
+class My_TreeCSV(ttk.Frame):
+    """
+    Macro-Widget compuesto. Hereda de ttk.Frame (o ttk.LabelFrame si hay título).
+    Contiene un My_FileDialog en la parte superior y un My_Tree en la inferior.
+    Carga automáticamente el CSV seleccionado en el TreeView.
+    """
+    def __init__(self, parent, 
+                titulo="", 
+                texto_boton="Buscar CSV",   
+                initialdir=None, 
+                entry_width=40,
+                b_botones=True, b_registro=True, d_textos=None, **kwargs):
+        
+        super().__init__(parent, **kwargs)
+
+        # ==========================================
+        # 1. CONTENEDOR INTELIGENTE
+        # ==========================================
+        if titulo and titulo.strip() != '':
+            self.box = ttk.LabelFrame(self, text=titulo)
+            self.box.pack(fill="both", expand=True, padx=2, pady=2)
+        else:
+            self.box = self
+
+        # Por defecto, filtramos por CSV
+        # if not filetypes:
+        #     filetypes = [("Archivos CSV", "*.csv"), ("Todos los archivos", "*.*")]
+
+        # ==========================================
+        # 2. FILE DIALOG (Panel Superior)
+        # ==========================================
+        self.file_dialog = My_FileDialog(
+            parent=self.box,
+            texto_boton=texto_boton,
+            titulo="", 
+            rel_coords="e",
+            title_dialog="Seleccionar Archivo CSV",
+            initialdir=initialdir,
+            filetypes=[("Archivos CSV","*.csv")],
+            entry_width=entry_width,
+            command=self._cargar_csv_automatico
+        )
+        # Empaquetamos arriba, sin expandir en vertical
+        self.file_dialog.pack(side="top", fill="x", padx=5, pady=(5, 5))
+
+        # ==========================================
+        # 3. TREEVIEW (Panel Inferior)
+        # ==========================================
+        self.tree = My_Tree(
+            parent=self.box,
+            titulo=titulo, 
+            b_botones=b_botones,
+            b_registro=b_registro,
+            d_textos=d_textos
+        )
+        # Empaquetamos debajo, forzando a expandirse en todas direcciones
+        self.tree.pack(side="top", fill="both", expand=True, padx=5, pady=(0, 5))
+
+    # ■■■■ LÓGICA INTERNA AUTOMÁTICA ■■■■
+
+    def _cargar_csv_automatico(self, ruta_fichero):
+        """ Se dispara solo cuando el usuario selecciona un archivo en el FileDialog. """
+        if not ruta_fichero: 
+            return 
+            
+        import pandas as pd
+        import csv
+        from tkinter import messagebox
+
+        try:
+            # 1. Detectamos cabecera
+            tiene_cabecera = True
+            with open(ruta_fichero, 'r', encoding='utf-8') as f:
+                muestra = f.read(2048)
+                try:
+                    tiene_cabecera = csv.Sniffer().has_header(muestra)
+                except csv.Error:
+                    pass
+            
+            # 2. Leemos con Pandas
+            if tiene_cabecera:
+                df = pd.read_csv(ruta_fichero)
+                nuevas_cabeceras = df.columns.tolist()
+            else:
+                df = pd.read_csv(ruta_fichero, header=None)
+                nuevas_cabeceras = [f"col{i}" for i in range(df.shape[1])]
+            
+            # 3. Inyectamos
+            nuevos_datos = df.values.tolist()
+            self.tree.set_feature_names(nuevas_cabeceras)
+            self.tree.load_data(nuevos_datos)
+            
+        except Exception as e:
+            from tkinter import messagebox
+            messagebox.showerror("Error de lectura", f"No se pudo leer el archivo CSV.\n\nDetalle: {e}")
+
+    # ■■■■ MÉTODOS PÚBLICOS DE PUENTE ■■■■
+    # Exponemos los métodos clave para que interactúes con él fácilmente desde fuera
+    
+    def get_textos(self):
+        """ Devuelve los textos del formulario (si lo hay). """
+        return self.tree.get_textos()
+        
+    def get_ruta(self):
+        """ Devuelve la ruta seleccionada. """
+        return self.file_dialog.get_ruta()
+
 
 # █ ■ █ ■ █ ■ █ ■ █ ■ █ ■ █ ■ █ ■ █ ■ █ ■ █ ■ █ ■ █ ■ █ ■ █ ■ █ ■ █ ■ █ ■ █
-class My_Radio(ttk.LabelFrame):
+class My_Radio(ttk.Frame):
     """
-    Widget compuesto (LabelFrame).
-    Contiene un grupo de tk.Radiobutton generados dinámicamente a partir de un array de diccionarios.
+    Crea un componente My_Radio con Label(titulo) en un LabelFrame.
     Gestiona su propia variable de control automáticamente.
-    """
-    def __init__(self, parent, cont_rd, titulo="", orientacion="vertical", **kwargs):
-        # 1. Configuración del LabelFrame (con o sin título)
-        if titulo:
-            super().__init__(parent, text=titulo, **kwargs)
-        else:
-            super().__init__(parent, relief="flat", borderwidth=0, **kwargs)
 
-        self.cont_rd = cont_rd
+    - dicc_radio: array de diccionarios [{'texto': 'op1', 'value': 1}, ...]
+    - orientacion: "vertical" (por defecto) u "horizontal"
+    - titulo: Si entra titulo se crea un Titulo en el LabelFrame.
+    """
+    def __init__(self, parent, dicc_radio, titulo="", orientacion="vertical", **kwargs):
+        # Iniciamos el Frame base (transparente y sin bordes por naturaleza)
+        super().__init__(parent, **kwargs)
+
+        self.dicc_radio = dicc_radio
         self.radios = []
 
-        # 2. Detector Automático de Tipo de Variable
-        if self.cont_rd and len(self.cont_rd) > 0:
-            primer_valor = self.cont_rd[0].get("value", "")
+        # ==========================================
+        # 1. CONTENEDOR INTELIGENTE
+        # ==========================================
+        if titulo:
+            # Si hay título, creamos la caja nativa con borde y texto
+            self.box = ttk.LabelFrame(self, text=titulo)
+            self.box.pack(fill="both", expand=True)
+        else:
+            # Si no hay título, el contenedor será este mismo Frame invisible
+            self.box = self
+
+        # ==========================================
+        # 2. DETECTOR AUTOMÁTICO DE VARIABLE
+        # ==========================================
+        if self.dicc_radio and len(self.dicc_radio) > 0:
+            primer_valor = self.dicc_radio[0].get("value", "")
             
             if isinstance(primer_valor, bool):
                 self.var = tk.BooleanVar()
@@ -580,19 +771,21 @@ class My_Radio(ttk.LabelFrame):
             else:
                 self.var = tk.StringVar()
             
-            # Seleccionamos la primera opción por defecto para que no aparezcan todos desmarcados
+            # Seleccionamos la primera opción por defecto
             self.var.set(primer_valor)
         else:
             self.var = tk.StringVar()
 
-        # 3. Construcción de los tk.Radiobutton
-        for item in self.cont_rd:
+        # ==========================================
+        # 3. CONSTRUCCIÓN DE RADIOBUTTONS
+        # ==========================================
+        for item in self.dicc_radio:
             texto = item.get("texto", "Opción")
             valor = item.get("value", texto)
             
-            rb = tk.Radiobutton(self, text=texto, value=valor, variable=self.var)
+            # ¡OJO! Se empaquetan dentro de 'self.box'
+            rb = tk.Radiobutton(self.box, text=texto, value=valor, variable=self.var)
             
-            # Empaquetado según la orientación deseada
             if orientacion.lower() == "horizontal":
                 rb.pack(side="left", padx=(5, 10), pady=5)
             else:
@@ -946,17 +1139,6 @@ class Nivel_2:
                     m['span'] = new_span
                     break
 
-    # def _widget_real(self, item, row_idx, col_idx):
-    #     """ ■ Posiciona un widget real en el grid y registra el tracking."""
-    #     item.grid_forget()
-    #     item.grid(in_=self.level_1, row=row_idx, column=col_idx, sticky="we")
-
-    #     self._draw_map.append({
-    #         'fila': row_idx, 'columna': col_idx,
-    #         'widget': item, 'tipo': 'widget', 'span': 1
-    #     })
-    #     return {'type': 'widget', 'widget': item, 'col': col_idx, 'span': 1}
-
     def _widget_real(self, item, row_idx, col_idx):
         """ ■ Posiciona un widget real en el grid, registra el tracking y automatiza pesos."""
         item.grid_forget()
@@ -964,7 +1146,7 @@ class Nivel_2:
         comportamiento_sticky = "we"
         
         # Validación limpia usando isinstance 
-        if isinstance(item, (My_Tree, My_Listbox, tk.Listbox, ttk.Treeview, tk.Text, tk.Canvas)):
+        if isinstance(item, (My_Tree, My_TreeCSV, My_Listbox, tk.Listbox, ttk.Treeview, tk.Text, tk.Canvas)):
             comportamiento_sticky = "nsew"
             
             # ■■ ¡LA MAGIA DE LA AUTOMATIZACIÓN! ■■
@@ -979,138 +1161,122 @@ class Nivel_2:
         })
         return {'type': 'widget', 'widget': item, 'col': col_idx, 'span': 1}
 
-    # def _widget_real(self, item, row_idx, col_idx):
-    #     """ ■ Posiciona un widget real en el grid y registra el tracking."""
-    #     item.grid_forget()        
-    #     comportamiento_sticky = "we"        
-
-    #     # Validación limpia usando isinstance 
-    #     if isinstance(item, (My_Tree, My_Listbox, tk.Listbox, ttk.Treeview, tk.Text, tk.Canvas)):
-    #         comportamiento_sticky = "nsew"
-
-    #     item.grid(in_=self.level_1, row=row_idx, column=col_idx, sticky=comportamiento_sticky)
-    #     self._draw_map.append({
-    #         'fila': row_idx, 'columna': col_idx,
-    #         'widget': item, 'tipo': 'widget', 'span': 1
-    #     })
-    #     return {'type': 'widget', 'widget': item, 'col': col_idx, 'span': 1}
-
-    # ■■■ ■■■ ■■■ ■■■ ■■■ ■■■ ■■■ ■■■ ■■■ ■■■ ■■■ ■■■ ■■■ ■■■ ■■■  
-    # ■■■ ■■■ ■■■ ■■■ ■■■ ■■■ ■■■ ■■■ ■■■ ■■■ ■■■ ■■■ ■■■ ■■■ ■■■  
-    def my_fileDialog(self,  texto_boton="📂 Load File", title="Seleccionar Archivo", 
-                    initialdir=None, filetypes=None, 
-                    entry_width=40, b_split=False):
+    # ■■■ ■■■ ■■■ ■■■ ■■■ ■■■ ■■■ ■■■ ■■■ ■■■ ■■■ ■■■ ■■■ ■■■ ■■■ ■■■ ■■■ ■■■ ■■■ ■■■  
+    # ■■■ ■■■ ■■■ ■■■ ■■■ ■■■ ■■■ ■■■ ■■■ ■■■ ■■■ ■■■ ■■■ ■■■ ■■■ ■■■ ■■■ ■■■ ■■■ ■■■  
+    # ■■■■■■■ WIDGETS CUSTOM
+    # ■■■ ■■■ ■■■ ■■■ ■■■ ■■■ ■■■ ■■■ ■■■ ■■■ ■■■ ■■■ ■■■ ■■■ ■■■ ■■■ ■■■ ■■■ ■■■ ■■■  
+    # ■■■ ■■■ ■■■ ■■■ ■■■ ■■■ ■■■ ■■■ ■■■ ■■■ ■■■ ■■■ ■■■ ■■■ ■■■ ■■■ ■■■ ■■■ ■■■ ■■■  
+    def my_fileDialog(self, texto_boton="Buscar", titulo="", rel_coords="e", 
+                      title_dialog="Seleccionar Archivo", initialdir=None, filetypes=None, 
+                      entry_width=40, command=None):
         """
-        Crea un My_FileDialog.
-        - entry_width(int): El tamaño de la caja de texto.
-        - b_split=False (default): empaqueta Entry+Button dentro de un Frame y devuelve el Frame.
-        - b_split=True: devuelve los widgets sueltos (entry, button) para que draw() los coloque
-          en celdas independientes de la matriz.
-        
+        Crea un My_FileDialog compacto.
+        Si se le pasa un 'titulo', dibuja un LabelFrame; si no, es invisible.
         """
-        if b_split:
-            # Modo suelto: los widgets nacen directamente en self.frame
-            fd = My_FileDialog(
-                parent      = self.frame,
-                texto_boton = texto_boton,
-                title       = title,
-                initialdir  = initialdir,
-                filetypes   = filetypes,
-                entry_width = entry_width,
-            )
-            # Devolvemos los widgets para que el usuario los distribuya en la matriz
-            
-            return fd.entry, fd.btn
-
-        else:
-            contenedor = ttk.Frame(self.frame)
-            fd = My_FileDialog(
-                parent      = contenedor,
-                texto_boton = texto_boton,
-                title       = title,
-                initialdir  = initialdir,
-                filetypes   = filetypes,
-                entry_width = entry_width,
-            )
-            fd.entry.pack(side="left", fill="x", expand=True, padx=(0, 5))
-            fd.btn.pack(side="left")
-            # Delegación: Lo que ocurre aquí es monkey patching básico: 
-            # le estás pegando métodos al Frame como si fueran susyos.
-            # fdlg_widget.get_ruta = lambda: fd.get_ruta()
-            # ahora se puede usar los metodos de FileDialoger en el Frame contenedor
-            contenedor.get_ruta            = fd.get_ruta
-            contenedor.get_ruta_abreviada  = fd.get_ruta_abreviada
-            contenedor.set_ruta            = fd.set_ruta
-            contenedor.entry               = fd.entry
-            contenedor.btn                 = fd.btn
-            
-            return contenedor
+        file_dialog = My_FileDialog(
+            parent=self.frame,
+            texto_boton=texto_boton,
+            titulo=titulo,
+            rel_coords=rel_coords,
+            title_dialog=title_dialog,
+            initialdir=initialdir,
+            filetypes=filetypes,
+            entry_width=entry_width,
+            command = command
+        )
+        return file_dialog
     
-    def my_slide(self,  texto= "—■—", 
-                        desde= 0, hasta= 20, valor_inicial= 5, 
-                        tipo_slide= "scale" , tipo_dato= tk.IntVar
-                 ):
+    def my_slide(self, titulo= "—■—",desde= 0,hasta= 20,valor_inicial= 5,tipo_slide= "scale",
+                        tipo_dato= tk.IntVar,
+                        rel_coords='w'
+                        ):
         """
         Crea un objeto My_Slide(clase interna) con sus widgets asociados ( lbl_texto , slide, lbl_valor).
-         - tipo_slide: 'scale' (ttk.Scale) o 'slide' (tk.Scale). El tipo de control que se usará para el slide. 'scale' es más moderno, 'slide' es más clásico.
-         - tipo_dato: tk.IntVar, tk.DoubleVar o tk.BooleanVar. El tipo de variable de control que se usará para almacenar el valor del slide. Esto afecta el formato del valor mostrado en lbl_valor.
-         - texto: El texto que se mostrará en el label del slide. """                
-        new_slide = My_Slide(
-            parent = self.frame,    # Modo suelto: los widgets nacen directamente en self.frame
-            texto_label= texto,
-            desde=0,
-            hasta=20,
+         • tipo_slide: 'scale' (ttk.Scale) o 'slide' (tk.Scale). El tipo de control que se usará para el slide. 'scale' es más moderno, 'slide' es más clásico.
+         • tipo_dato: tk.IntVar, tk.DoubleVar o tk.BooleanVar. El tipo de variable de control que se usará para almacenar el valor del slide. Esto afecta el formato del valor mostrado en lbl_valor.
+         • texto: El texto que se mostrará en el label del slide. 
+         • rel_coords: es una tupla de dos elementos.
+                      representan la posición relativa de los widgets no slide ,label y valor en ese orden.
+                      pej: (w,e): label w, valor e; (w,w): label w concatenado valor e + widget
+                      (n,e): label n, valor e(ocupa 2 filas )
+         """                
+        slide = My_Slide(
+            parent = self.frame,    
+            texto_label= titulo,
+            desde=desde,
+            hasta=hasta,
+            valor_inicial=valor_inicial, 
+            tipo_slide=tipo_slide,
             tipo_dato=tk.IntVar,
-            tipo_slide='slide',
-            valor_inicial=0                
+            rel_coords=rel_coords                
         )
         # Devolvemos los widgets para que el usuario los distribuya en la matriz            
-        return new_slide.lbl_texto, new_slide.obj, new_slide.lbl_valor
-
+        # return slide.lbl_texto, slide.obj, slide.lbl_valor
+        return slide
 
     def my_listbox(self, datos=None, b_botones=True, b_registro=True):
         """
         Instancia y devuelve el componente My_Listbox, el cual ya es un Frame.
         """
         # Se lo asignamos directamente al grid (self.frame, que es level_1)
-        nuevo_listbox = My_Listbox(
-            parent=self.frame, 
-            datos=datos, 
-            b_botones=b_botones, 
-            b_registro=b_registro
-        )
-        
+        listbox = My_Listbox(parent=self.frame, 
+                            datos=datos, 
+                            b_botones=b_botones, 
+                            b_registro=b_registro)
         # Devolvemos el propio objeto, que es un Frame y será procesado perfectamente por draw()
-        return nuevo_listbox
+        return listbox
     
-    def my_tree(self, titulo="",
-                      cabeceras=None, 
-                      datos=None, 
-                      b_botones=True, 
-                      b_registro=True, 
-                      d_textos=None):
+    def my_tree(self, titulo="", cabeceras=None, datos=None, b_botones=True, b_registro=True, d_textos=None):
         """
-        Crea un componente TreeView de ttk.
+        Crea un componente TreeView de ttk con opciones b_botones / b_registro /  b_textos
         """
-        nuevo_tree = My_Tree( parent=self.frame,
-            titulo=titulo, cabeceras=cabeceras, datos=datos,
-            b_botones=b_botones, b_registro=b_registro, d_textos=d_textos
+        treeview = My_Tree( parent=self.frame,
+                                titulo=titulo, 
+                                cabeceras=cabeceras, 
+                                datos=datos,
+                                d_textos=d_textos,
+                                b_botones=b_botones, b_registro=b_registro
         )
-        return nuevo_tree
+        return treeview
 
-    def my_radio(self, cont_rd, titulo="", orientacion="vertical"):
+    def my_radio(self, dicc_radio, titulo="", orientacion="vertical"):
         """
         Crea un componente My_Radio.
-        - cont_rd: array de diccionarios [{'texto': 'op1', 'value': 1}, ...]
+        - dicc_radio: array de diccionarios [{'texto': 'op1', 'value': 1}, ...]
         - orientacion: "vertical" (por defecto) u "horizontal"
         """
-        nuevo_radio = My_Radio(
+        radio = My_Radio(
             parent=self.frame,
-            cont_rd=cont_rd,
+            dicc_radio=dicc_radio,
             titulo=titulo,
             orientacion=orientacion
         )
-        return nuevo_radio
+        return radio
+
+    def my_tree_csv(self, titulo="", 
+                    texto_boton="Buscar CSV", rel_coords_fd="e", title_dialog="Seleccionar Archivo", 
+                    initialdir=None, filetypes=None, entry_width=40,
+                    cabeceras=None, datos=None, b_botones=True, b_registro=True, d_textos=None):
+        """
+        Crea un Macro-Componente: FileDialog + TreeView.
+        Carga automáticamente el CSV seleccionado en la tabla y genera el formulario.
+        """
+        nuevo_tree_csv = My_TreeCSV(
+            parent=self.frame,
+            titulo=titulo,
+            texto_boton=texto_boton,
+            # rel_coords_fd=rel_coords_fd,
+            # title_dialog=title_dialog,
+            initialdir=initialdir,
+            # filetypes=filetypes,
+            entry_width=entry_width,
+            # cabeceras=cabeceras,
+            # datos=datos,
+            b_botones=b_botones,
+            b_registro=b_registro,
+            d_textos=d_textos
+        )
+        return nuevo_tree_csv
 
 
 # ██████████████████████████████████████████
