@@ -6,11 +6,11 @@ class Pestanas_by_Step(ttk.Frame):
     """Notebook secuencial configurable mediante un diccionario {clave: titulo}
     Permite avanzar y bloquear pestañas tanto por código (claves) como por interfaz (índices).
     """
-    def __init__(self, contenedor, configuracion_pestanas, b_botones=True, mode_step=True):
+    def __init__(self, contenedor, configuracion_pestanas, b_botones_cursor=True, mode_step=True):
         """ 
         contenedor: el contenedor del Frame de Pestañas.
         configuracion_pestanas: un diccionario key = slug:str , value = 'Titulo de las Pestañas'
-        b_botones: True, muestra botones para avanzar y bloquear. False no los muestra.
+        b_botones_cursor        : True, muestra botones para avanzar y bloquear. False no los muestra.
         mode_step: True (por defecto) activa el comportamiento secuencial de avanzar/bloquear. 
                    False permite navegación libre por todas las pestañas sin bloqueos.
         """
@@ -42,8 +42,8 @@ class Pestanas_by_Step(ttk.Frame):
             # Vinculamos el evento de protección para que no salten a pestañas bloqueadas
             self.notebook.bind("<<NotebookTabChanged>>", self._on_tab_changed)
             
-            # --- PANEL DE CONTROL GLOBAL (Solo si b_botones es True y estamos en modo paso a paso) ---
-            if b_botones:
+            # --- PANEL DE CONTROL GLOBAL (Solo si b_botones_cursor es True y estamos en modo paso a paso) ---
+            if b_botones_cursor:
                 panel_control = ttk.Frame(self)
                 panel_control.pack(fill="x", padx=10, pady=10)
 
@@ -59,11 +59,11 @@ class Pestanas_by_Step(ttk.Frame):
             pass
 
 
-    # def __init__(self, contenedor, configuracion_pestanas, b_botones=True):
+    # def __init__(self, contenedor, configuracion_pestanas, b_botones_cursor=True):
     #     """ 
     #     contenedor: el contenedor del Frame de Pestañas.
     #     configuracion_pestanas: un diccionario key = slug:str , value = 'Titulo de las Pestañas'
-    #     b_botones: True, muestra botones para avanzar y bloquear. False no los muestra.
+    #     b_botones_cursor: True, muestra botones para avanzar y bloquear. False no los muestra.
     #     """
     #     super().__init__(contenedor)
 
@@ -84,7 +84,7 @@ class Pestanas_by_Step(ttk.Frame):
     #     # ■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■
     #     # PANEL DE CONTROL INTEGRADO (opcional)
     #     # ■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■
-    #     if b_botones:
+    #     if b_botones_cursor:
     #         self._crear_panel_control()
 
     def _crear_pestanas(self):

@@ -28,7 +28,7 @@ def main():
     }
     a=1
     b=2
-    TABS = Pestanas_by_Step(ventana, configuracion_pestanas, b_botones = True, mode_step=False)
+    TABS = Pestanas_by_Step(ventana, configuracion_pestanas, b_botones_cursor = True, mode_step=False)
     TABS.pack(fill="both", expand=True, padx=10, pady=10)
 
     # ■■ ■■ ■■ ■■ ■■ ■■ ■■ ■■ ■■ ■■ ■■ ■■ ■■ ■■ ■■ ■■ ■■ ■■ ■■ ■■ ■■ ■■ ■■ ■■ 
@@ -90,7 +90,8 @@ def main():
         {"texto": "XGBoost", "value": 2},
         {"texto": "Regresión Logística", "value": 3}
     ]
-    radio_con_titulo = F2.my_radio(titulo="Selecciona el Algoritmo", dicc_radio=opciones_algoritmo, orientacion="vertical" )
+    titulo = "Selecciona un Algoritmo"
+    radio_con_titulo = F2.my_radio(titulo=titulo, dicc_radio=opciones_algoritmo, orientacion="vertical" )
 
     # • my_radio
     opciones_booleanas = [{"texto": "Sí", "value": True}, {"texto": "No", "value": False}]
@@ -142,48 +143,14 @@ def main():
     # ■■ ■■ ■■ ■■ ■■ ■■ ■■ ■■ ■■ ■■ ■■ ■■ ■■ ■■ ■■ ■■ ■■ ■■ ■■ ■■ ■■ ■■ ■■ ■■ 
     F4 = Nivel_2(TABS.get_p('met'), shape="6x6", padx=15, pady=7)    
 
-    # Los datos se pueden sacar de un archivo csv, json, base de datos...
-    # ahora creo unos datos sinteticos para mostrar el control 
-    titulo = "■ BDatos de Clientes"    
-    arbol_vacio = F4.my_tree(titulo="•vacio•" )    
     
-    btn_set_cab = tk.Button(F4.frame, text="Inyectar Cabeceras", 
-                            command=lambda: arbol_vacio.set_feature_names(["A", "B", "C"]))
-    matrix_F4 = [
-        [arbol_vacio, '+', '+', '+', '+', '+'],                                             
-        [],
-        [btn_set_cab],                                             
-    ]
-    F4.draw(matrix = matrix_F4)
 
     # ■■ ■■ ■■ ■■ ■■ ■■ ■■ ■■ ■■ ■■ ■■ ■■ ■■ ■■ ■■ ■■ ■■ ■■ ■■ ■■ ■■ ■■ ■■ ■■ 
     # FRAME PARA LA PESTAÑA 'GRAFICOS'
     # ■■ ■■ ■■ ■■ ■■ ■■ ■■ ■■ ■■ ■■ ■■ ■■ ■■ ■■ ■■ ■■ ■■ ■■ ■■ ■■ ■■ ■■ ■■ ■■ 
     F5 = Nivel_2(TABS.get_p('graf'), shape="6x6", padx=15, pady=7)    
 
-    # Los datos se pueden sacar de un archivo csv, json, base de datos...
-    # ahora creo unos datos sinteticos para mostrar el control 
-    datos_ok = [
-        (1, "Ana", "García", "López", "555-1234", "Madrid"),
-        (1, "Marcos", "Rojas", "Márquez", "3333-1234", "Vigo"),
-        (1, "María", "Saturno", "Obradoiro", "353-1234", "Murcia"),
-        (2, "Juan", "Pérez", "Gómez", "111-1234", "Las Palmas de Gran Canaria"),
-    ]
-    # En caso de que no se metan cabeceras, se escribiran igualmente los datos sinteticos
-    cab = ["ID", "Nombre", "Apellido 1", "Apellido 2", "Teléfono", "Ciudad"]    
-    titulo = "■ BDatos de Clientes"
-    dicc = [[1], [2,3],[4 , 5, 7]]
-    arbol_not_features = F5.my_tree(titulo="■■",  datos=datos_ok, d_textos = dicc )    
-    # •
-    btn_CAB = tk.Button(F5.frame, text="Inyectar Cabeceras", command=lambda: arbol_not_features.set_feature_names(cab))
-    matrix_F5 = [
-        [arbol_not_features, '+', '+', '+', '+', '+'] ,
-        [] ,
-        [btn_CAB] ,
-    ]
-
-    F5.draw(matrix = matrix_F5)
-
+    
     # ■■ ■■ ■■ ■■ ■■ ■■ ■■ ■■ ■■ ■■ ■■ ■■ ■■ ■■ ■■ ■■ ■■ ■■ ■■ ■■ ■■ ■■ ■■ ■■ 
     # FRAME PARA LA PESTAÑA 'Tab6'
     # ■■ ■■ ■■ ■■ ■■ ■■ ■■ ■■ ■■ ■■ ■■ ■■ ■■ ■■ ■■ ■■ ■■ ■■ ■■ ■■ ■■ ■■ ■■ ■■ 
@@ -197,17 +164,11 @@ def main():
         (1, "María", "Saturno", "Obradoiro", "353-1234", "Murcia"),
         (2, "Juan", "Pérez", "Gómez", "111-1234", "Las Palmas de Gran Canaria"),
     ]
+    titulo = "■ Demostración de My_Tree con Datos Sintenticos y cabeceras manuales."
     # En caso de que no se metan cabeceras, se escribiran igualmente los datos sinteticos
-    cab = ["ID", "Nombre", "Apellido 1", "Apellido 2", "Teléfono", "Ciudad"]    
-    # posicion de los textos.
-    matriz_disposicion = [
-        ["Nombre", "_", "_"],               
-        [],                                       
-        ["Apellido 1", "+", "Apellido 2", "+"],   
-        ["Ciudad", "+","Teléfono"]                    
-    ]
-    titulo = "■ BDatos de Clientes"
-    arbol = F6.my_tree(titulo=titulo, cabeceras=cab, datos=datos_ok, d_textos = matriz_disposicion )    
+    cab = ["ID", "Nombre", "Ape-1", "Ape-2", "Teléfono", "Ciudad"]    
+    poscion_textos = [["Nombre", "_", "_"],[],["Ape-1", "+", "Ape-2", "+"],["Ciudad", "+","Teléfono"] ]
+    arbol = F6.my_tree(titulo=titulo, cabeceras=cab, datos=datos_ok, textos = poscion_textos )    
     matrix_F6 = [
         [arbol,] ,
     ]
@@ -216,21 +177,33 @@ def main():
     # ■■ ■■ ■■ ■■ ■■ ■■ ■■ ■■ ■■ ■■ ■■ ■■ ■■ ■■ ■■ ■■ ■■ ■■ ■■ ■■ ■■ ■■ ■■ ■■ 
     # FRAME PARA LA PESTAÑA 'Tab7'
     # ■■ ■■ ■■ ■■ ■■ ■■ ■■ ■■ ■■ ■■ ■■ ■■ ■■ ■■ ■■ ■■ ■■ ■■ ■■ ■■ ■■ ■■ ■■ ■■ 
-    import pandas as pd
-    import csv  # Importamos la librería estándar para detectar cabeceras
-    from tkinter import messagebox
+    # import pandas as pd
+    # import csv  # Importamos la librería estándar para detectar cabeceras
+    # from tkinter import messagebox
 
     F7 = Nivel_2(TABS.get_p('tab7'), shape="2x2", padx=15, pady=7)    
 
-    # Creamos primero el visor de datos (My_Tree)
-    arbol_visor = F7.my_tree(titulo="■ Visor Dinámico de Datos", d_textos={})
+    acciones_crud = [
+        ("Add", lambda: cmd.saludar("add") ), "+", '_', 
+        ("Borrar", lambda: cmd.saludar("borrar") ), '_', 
+        ("Actulizar", lambda: cmd.saludar("update") ), "+"
+    ]
 
-    # Instanciamos el FileDialog pasándole el comando directamente
-    fd_dataset = F7.my_fileDialog(titulo="■ Origen de Datos",
-                                    texto_boton="📂 Cargar Archivo",
-                                    filetypes=[("Archivos CSV","*.csv")],
-                                    rel_coords="e", 
-                                    command=cmd.act_cargar_archivo ) # <--- ¡CABLEADO DIRECTO!
+    # • My_Tree sin textos y vacío para cargar.    
+    # arbol_visor = F7.my_tree(titulo="■ Visor Dinámico de Datos")
+    titulo="■ Visor Dinámico de Datos"
+    # arbol_visor = F7.my_tree( titulo = titulo, textos=None,  acciones=acciones_crud,)
+    poscion_textos = [[1, "+", "_"],[],[2, "+", 3, "+"],[0,] ]
+    arbol_visor = F7.my_tree( titulo = titulo, 
+                            textos={}, 
+                            textos_height=None,    # No pone altura maxima
+                            acciones=acciones_crud,)
+    # d_texto = None 
+    fd_dataset = F7.my_fileDialog(titulo="■ Origen de Datos", 
+                                texto_boton="📂 Cargar Archivo",
+                                filetypes=[("Archivos CSV","*.csv")],
+                                rel_coords="e",                                 
+                                command=lambda ruta: cmd.accion_file_d_to_treeview(ruta, arbol_visor)) # ► ¡CABLEADO DIRECTO!
     pass
     matrix = [
         [fd_dataset, "+"],
@@ -242,8 +215,18 @@ def main():
     # FRAME PARA LA PESTAÑA 'Tab7'
     F8 = Nivel_2(TABS.get_p('tab8'), shape="2x2", padx=15, pady=20)    
     # ■■ ■■ ■■ ■■ ■■ ■■ ■■ ■■ ■■ ■■ ■■ ■■ ■■ ■■ ■■ ■■ ■■ ■■ ■■ ■■ ■■ ■■ ■■ ■■ 
-
-    tree_csv = F8.my_tree_csv(d_textos={})
+    titulo = "■ Visor dinamico de csv con My_Tree y FileDialog integrado ■"
+    poscion_textos = [[1, "+", "_"],[],[2, "+", 3, "+"],[0,] ]
+    acciones_crud = [
+        ("Add", lambda: cmd.saludar("add") ), "+", '_', 
+        ("Borrar", lambda: cmd.saludar("borrar") ), '_', 
+        ("Actulizar", lambda: cmd.saludar("update") ), "+"
+    ]
+    tree_csv = F8.my_tree_csv(titulo = titulo, 
+                                textos={}, 
+                                textos_height=200,                                 
+                                acciones = acciones_crud,
+                                )                     
     matrix = [
         [tree_csv, "+"]
     ]

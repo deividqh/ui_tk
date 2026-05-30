@@ -24,7 +24,7 @@ class My_FileDialog(ttk.Frame):
         if self.rel_coords not in ["n", "s", "e", "w"]:
             self.rel_coords = "e"
 
-        # Guardamos el comando de evento (callback)
+        # Guardamos el callback de evento (callback)
         self._command = command
 
         # ==========================================
@@ -203,11 +203,11 @@ class My_Listbox(ttk.Frame):
     Widget compuesto que hereda de Frame. 
     Contiene un Listbox con Scrollbar y, opcionalmente, controles de navegación y estado.
     """
-    def __init__(self, parent, datos=None, b_botones=True, b_registro=True, **kwargs):
+    def __init__(self, parent, datos=None, b_botones_cursor=True, b_fila_d_total=True, **kwargs):
         super().__init__(parent, **kwargs)
         
-        self.b_botones = b_botones
-        self.b_registro = b_registro
+        self.b_botones_cursor = b_botones_cursor
+        self.b_fila_d_total = b_fila_d_total
 
         # ■ ■ ■ ■ ■ ■ ■ ■ ■ ■ ■ ■ ■ ■ ■ ■ ■ ■ ■ ■ ■ ■ ■ ■ ■ ■ 
         # 1. LISTBOX Y SCROLLBAR (SIEMPRE PRESENTES)
@@ -228,12 +228,12 @@ class My_Listbox(ttk.Frame):
         # 2. CONTROLES INFERIORES (BOTONES Y/O REGISTRO)
         # ■ ■ ■ ■ ■ ■ ■ ■ ■ ■ ■ ■ ■ ■ ■ ■ ■ ■ ■ ■ ■ ■ ■ ■ ■ ■ 
         # Solo creamos la fila de abajo si al menos uno de los controles fue solicitado
-        if self.b_botones or self.b_registro:
+        if self.b_botones_cursor or self.b_fila_d_total:
             self.frm_bottom = ttk.Frame(self)
             self.frm_bottom.pack(fill="x", pady=(2, 0))
             
             # ■ 1. Empaquetamos los botones a los extremos si fueron solicitados
-            if self.b_botones:
+            if self.b_botones_cursor:
                 self.btn_first = ttk.Button(self.frm_bottom, text="<<", width=4, command=self._go_first)
                 self.btn_prev  = ttk.Button(self.frm_bottom, text="<",  width=4, command=self._go_prev)
                 self.btn_next  = ttk.Button(self.frm_bottom, text=">",  width=4, command=self._go_next)
@@ -247,11 +247,11 @@ class My_Listbox(ttk.Frame):
                 self.btn_next.pack(side="right", padx=(0, 2))
             
             # ■ 2. Empaquetamos el centro (Label de estado o Espaciador invisible)
-            if self.b_registro:
+            if self.b_fila_d_total:
                 self.lbl_status = ttk.Label(self.frm_bottom, text="0 de 0", anchor="center")
                 # Al empaquetarlo con expand=True después de los botones, rellena el centro exacto
                 self.lbl_status.pack(side="left", fill="both", expand=True)
-            elif self.b_botones:
+            elif self.b_botones_cursor:
                 # Si hay botones pero NO registro, metemos el espaciador para empujar los botones
                 lbl_spacer = ttk.Label(self.frm_bottom, text="")
                 lbl_spacer.pack(side="left", fill="both", expand=True)
@@ -276,8 +276,8 @@ class My_Listbox(ttk.Frame):
 
     # ■■■■ LÓGICA PRIVADA Y NAVEGACIÓN ■■■■
     def _actualizar_status(self, event=None):
-        """ Actualiza el label solo si b_registro es True. """
-        if not self.b_registro:
+        """ Actualiza el label solo si b_fila_d_total es True. """
+        if not self.b_fila_d_total:
             return
             
         total = self.listbox.size()
@@ -323,24 +323,35 @@ class My_Listbox(ttk.Frame):
 class My_Tree(ttk.Frame):
     """
     Widget compuesto (Frame).
-    Contiene un Treeview, botones de navegación (opcionales) y un formulario dinámico 
-    autogenerado a partir de d_textos, todo integrado en un único bloque sólido.
+    titulo: Si se pasa, se muestra un LabelFrame con el título. Si no, se omite.
+    cabeceras: Lista de strings para las columnas del Treeview.
+    b_botones_cursor: Si es True, muestra botones de navegación (Primero, Anterior, Siguiente, Último).
+    b_fila_d_total: Si es True, muestra un label con el estado "X de Y" debajo del Treeview.    
+    textos: Lista de strings para generar un formulario dinámico debajo del Treeview. 
+            Cada string se interpreta como una cabecera o un índice de columna para crear un Entry.
+    acciones: Lista de tuplas (texto_boton, callback) para generar botones de acción debajo del formulario.
+    textos_height_: Altura del canvas del formulario integrado (si textos no es None).
+    datos: Lista de listas o tuplas con los datos iniciales para cargar en el Treeview.
+
     """
     def __init__(self, parent, 
-                        titulo="", 
-                        cabeceras=None, 
-                        datos=None, 
-                        b_botones=True, 
-                        b_registro=True, 
-                        d_textos=None, 
+                        titulo: str="", 
+                        cabeceras: list=None, 
+                        b_botones_cursor: bool=True, 
+                        b_fila_d_total: bool=True, 
+                        textos: list=None, 
+                        textos_height:int=120,
+                        acciones: list=None,
+                        datos: {list|tuple}=None, 
                         **kwargs):
         super().__init__(parent, **kwargs)
         
         self.cabeceras = list(cabeceras) if cabeceras else []
         self.datos = datos if datos else []
-        self.b_botones = b_botones
-        self.b_registro = b_registro
-        self.d_textos = d_textos
+        self.b_botones_cursor = b_botones_cursor
+        self.b_fila_d_total = b_fila_d_total
+        self.textos = textos
+        self.acciones = acciones
         
         self.dicc_entries = {}  # Guardará { indice_cabecera: widget_Entry }
 
@@ -352,63 +363,98 @@ class My_Tree(ttk.Frame):
             self.lbl_titulo.pack(side="top", fill="x", pady=(0, 5))
             
         # ==========================================
-        # 2. TREEVIEW Y SCROLL
+        # 2. TREEVIEW Y SCROLLS (Horizontal y Vertical)
         # ==========================================
         self.frm_tree = ttk.Frame(self)
         self.frm_tree.pack(fill="both", expand=True)
         
-        self.scroll = ttk.Scrollbar(self.frm_tree, orient="vertical")
-        self.tree = ttk.Treeview(self.frm_tree, yscrollcommand=self.scroll.set)
-        self.scroll.config(command=self.tree.yview)
+        self.scroll_y = ttk.Scrollbar(self.frm_tree, orient="vertical")
+        self.scroll_x = ttk.Scrollbar(self.frm_tree, orient="horizontal")
         
+        self.tree = ttk.Treeview(self.frm_tree, 
+                                 yscrollcommand=self.scroll_y.set,
+                                 xscrollcommand=self.scroll_x.set)
+        
+        self.scroll_y.config(command=self.tree.yview)
+        self.scroll_x.config(command=self.tree.xview)
+        
+        self.scroll_y.pack(side="right", fill="y")
+        self.scroll_x.pack(side="bottom", fill="x")
         self.tree.pack(side="left", fill="both", expand=True)
-        self.scroll.pack(side="right", fill="y")
         
-        self.tree.bind("<<TreeviewSelect>>", self._al_seleccionar)
+        self.tree.bind("<<TreeviewSelect>>", self._accion_al_seleccionar)
         
         # ==========================================
-        # 3. CONTROLES INFERIORES CENTRADOS
+        # 3. CONTROLES INFERIORES CENTRADOS (Paginación)
         # ==========================================
-        if self.b_botones or self.b_registro:
+        if self.b_botones_cursor or self.b_fila_d_total:
             self.frm_bottom = ttk.Frame(self)
             self.frm_bottom.pack(fill="x", pady=(5, 0))
             
-            # Sub-frame para mantener todo agrupado y centrado
             self.frm_center = ttk.Frame(self.frm_bottom)
             self.frm_center.pack(anchor="center")
             
-            if self.b_botones:
+            if self.b_botones_cursor:
                 self.btn_first = ttk.Button(self.frm_center, text="<<", width=4, command=self._go_first)
                 self.btn_prev  = ttk.Button(self.frm_center, text="<",  width=4, command=self._go_prev)
                 self.btn_next  = ttk.Button(self.frm_center, text=">",  width=4, command=self._go_next)
                 self.btn_last  = ttk.Button(self.frm_center, text=">>", width=4, command=self._go_last)
                 
-                # Empaquetamos los de la izquierda
                 self.btn_first.pack(side="left", padx=(0, 2))
                 self.btn_prev.pack(side="left")
             
-            if self.b_registro:
+            if self.b_fila_d_total:
                 self.lbl_status = ttk.Label(self.frm_center, text="0 de 0", anchor="center")
-                # Solo aplicamos el padx=15 si hay botones empujando a los lados
-                pad_x = 15 if self.b_botones else 0
+                pad_x = 15 if self.b_botones_cursor else 0
                 self.lbl_status.pack(side="left", padx=pad_x)
                 
-            if self.b_botones:
-                # Empaquetamos los de la derecha
+            if self.b_botones_cursor:
                 self.btn_next.pack(side="left")
                 self.btn_last.pack(side="left", padx=(2, 0))
 
         # ==========================================
-        # 4. FORMULARIO INTEGRADO (Contenedor)
+        # 4. FORMULARIO INTEGRADO (Dinámico con Canvas)
         # ==========================================
-        self.frm_form = ttk.Frame(self)
-        self.frm_form.pack(fill="x", pady=(10, 0))
+        self.frm_form_container = ttk.Frame(self)
+        self.frm_form = None 
+        
+        if self.textos is not None:
+
+            if textos_height is None:
+                self.canvas_form = tk.Canvas(self.frm_form_container, highlightthickness=0)
+            else:
+                self.canvas_form = tk.Canvas(self.frm_form_container, height=abs(textos_height), highlightthickness=0)
+
+            self.scroll_form = ttk.Scrollbar(self.frm_form_container, orient="vertical", command=self.canvas_form.yview)
+            
+            self.frm_form = ttk.Frame(self.canvas_form)
+            
+            self.frm_form.bind(
+                "<Configure>",
+                lambda e: self.canvas_form.configure(scrollregion=self.canvas_form.bbox("all"))
+            )
+            self.canvas_window = self.canvas_form.create_window((0, 0), window=self.frm_form, anchor="nw")
+            self.canvas_form.bind("<Configure>", lambda e: self.canvas_form.itemconfig(self.canvas_window, width=e.width))
+            self.canvas_form.configure(yscrollcommand=self.scroll_form.set)
+
+            self.canvas_form.pack(side="left", fill="both", expand=True)
+            self.scroll_form.pack(side="right", fill="y")
+
+            # ■ Scroll con rueda del ratón sobre el canvas y sus widgets
+            self.canvas_form.bind("<MouseWheel>", self._on_form_mousewheel)
+            self.canvas_form.bind("<Button-4>", self._on_form_mousewheel)
+            self.canvas_form.bind("<Button-5>", self._on_form_mousewheel)
+        # ==========================================
+        # 5. PANEL DE ACCIONES (CRUD)
+        # ==========================================
+        self.frm_acciones = ttk.Frame(self)
 
         # ==========================================
         # CONFIGURACIÓN INICIAL DE COLUMNAS Y DATOS
         # ==========================================
         self._configurar_columnas()
         self._construir_formulario()
+        self._construir_acciones()
         if self.datos:
             self.load_data(self.datos)
 
@@ -425,8 +471,29 @@ class My_Tree(ttk.Frame):
         self._configurar_columnas()
         self._construir_formulario()
 
+    # def load_data(self, datos: list):
+    #     """ Limpia e inserta datos. """
+    #     self.datos = datos if datos else []
+    #     self._configurar_columnas()  
+    #     self._construir_formulario() 
+        
+    #     for item in self.tree.get_children():
+    #         self.tree.delete(item)
+            
+    #     for d in self.datos:
+    #         valores = d if isinstance(d, (list, tuple)) else (d,)
+    #         self.tree.insert("", tk.END, values=valores)
+            
+    #     self._actualizar_status()
+
     def load_data(self, datos: list):
         """ Limpia e inserta datos. """
+        # ■ Congelar el tamaño actual de la ventana raíz para evitar 
+        #   que el Treeview empuje la ventana al cargar datos anchos.
+        toplevel = self.winfo_toplevel()
+        toplevel.update_idletasks()
+        toplevel.geometry(toplevel.winfo_geometry())
+
         self.datos = datos if datos else []
         self._configurar_columnas()  
         self._construir_formulario() 
@@ -446,7 +513,7 @@ class My_Tree(ttk.Frame):
         Garantiza que el orden sea exactamente el de lectura de tu matriz (fila por fila)
         y devuelve únicamente los campos que tengan un registro real.
         """
-        if self.d_textos is None: return []
+        if self.textos is None: return []
         
         cab_efectivas = self._obtener_cabeceras_efectivas()
         d_trabajo = self._obtener_d_trabajo(cab_efectivas)
@@ -462,18 +529,31 @@ class My_Tree(ttk.Frame):
                     valores.append(self.dicc_entries[val].get())
                     
         return valores
-                    
-        return valores
 
     # ■■■■ LÓGICA PRIVADA ■■■■
 
     def _construir_formulario(self):
-        """ Construye internamente el Grid de Labels y Entries basándose en la MATRIZ d_textos. """
-        if self.d_textos is None: return
+        """ 
+        Construye internamente el Grid de Labels y Entries basándose en la MATRIZ textos. 
+        """
+        if self.textos is None or self.frm_form is None: 
+            self.frm_form_container.pack_forget()
+            return
             
         cab_efectivas = self._obtener_cabeceras_efectivas()
-        if not cab_efectivas: return 
-            
+        if not cab_efectivas: 
+            self.frm_form_container.pack_forget()
+            return
+        
+        # ■ Empaquetado controlado: si es la primera vez y las acciones ya están visibles,
+        # nos colocamos antes que ellas para mantener el orden lógico (formulario arriba, botones abajo).
+        if not self.frm_form_container.winfo_ismapped():
+            if self.frm_acciones.winfo_ismapped():
+                self.frm_form_container.pack(fill="x", pady=(10, 0), before=self.frm_acciones)
+            else:
+                self.frm_form_container.pack(fill="x", pady=(10, 0))
+        # else: ya está empaquetado, respetamos su orden actual
+
         # Limpieza por si venimos de un repintado dinámico
         for widget in self.frm_form.winfo_children():
             widget.destroy()
@@ -482,7 +562,8 @@ class My_Tree(ttk.Frame):
         d_trabajo = self._obtener_d_trabajo(cab_efectivas)
         max_row, max_col = self._obtener_dimensiones(d_trabajo)
         
-        # Configuramos los pesos de las columnas de la rejilla interna
+        # ■ Solo las columnas con índice impar se expanden al estirar la ventana, 
+        # ■ mientras que las columnas pares mantienen su tamaño mínimo... truco UI
         for c in range((max_col + 1) * 2):
             self.frm_form.columnconfigure(c, weight=1 if c % 2 != 0 else 0)
 
@@ -495,12 +576,14 @@ class My_Tree(ttk.Frame):
                 col_real = c * 2 
                 
                 if isinstance(val, int) and 0 <= val < len(cab_efectivas):
-                    lbl = ttk.Label(self.frm_form, text=f"{cab_efectivas[val]}:")
+                    # • Label
+                    lbl = ttk.Label(self.frm_form, text=f"{cab_efectivas[val]}:")                    
                     lbl.grid(row=r, column=col_real, sticky="e", padx=(5, 2), pady=2)
                     
-                    ent = ttk.Entry(self.frm_form, state="readonly")
+                    # • Entry
+                    ent = ttk.Entry(self.frm_form, state="readonly")                    
                     ent.grid(row=r, column=col_real + 1, sticky="we", padx=(0, 5), pady=2)
-                    
+                    # ■ Registro
                     self.dicc_entries[val] = ent 
                     last_entry = ent  
                     
@@ -511,7 +594,51 @@ class My_Tree(ttk.Frame):
                         last_entry.grid_configure(columnspan=span_actual + 2)
 
 
-    def _al_seleccionar(self, event=None):
+    def _construir_acciones(self):
+        """ Construye la botonera basándose en la lista acciones. """
+        # ■ Ocultamos si no hay botones
+        if not self.acciones:
+            self.frm_acciones.pack_forget() 
+            return
+
+        self.frm_acciones.pack(fill="x", pady=(5, 0)) # Mostramos el frame
+        
+        # Limpieza por si hay repintado
+        for widget in self.frm_acciones.winfo_children():
+            widget.destroy()
+            
+        # Cada elemento define una columna. Le damos weight para que se repartan.
+        for c in range(len(self.acciones)):
+            self.frm_acciones.columnconfigure(c, weight=1)
+            
+        placed = [] # Tracking para el columnspan
+        for c, item in enumerate(self.acciones):
+            if item == '_' or item == '-':
+                # Espacio vacío (Frame transparente que absorberá espacio gracias al weight=1)
+                empty = ttk.Frame(self.frm_acciones)
+                empty.grid(row=0, column=c, sticky="we")
+                placed.append({'widget': empty, 'span': 1})
+                
+            elif item == '+':
+                # Expansión del widget anterior a la izquierda
+                if placed:
+                    target = placed[-1]
+                    target['span'] += 1
+                    target['widget'].grid_configure(columnspan=target['span'])
+                    # Placeholder para no perder la métrica de columnas
+                    placed.append({'widget': target['widget'], 'span': 0}) 
+                    
+            elif isinstance(item, (list, tuple)) and len(item) == 2:
+                # Tupla ("Texto Botón", funcion_comando)
+                texto, callback = item
+                
+                # Si callback es None, le pasamos una función vacía por seguridad
+                btn = ttk.Button(self.frm_acciones, text=texto, 
+                                 command=callback if callback else lambda: None)
+                btn.grid(row=0, column=c, sticky="we", padx=2, pady=5)
+                placed.append({'widget': btn, 'span': 1})
+
+    def _accion_al_seleccionar(self, event=None):
         """ Al clicar un registro, vuelca los datos en los Entries. """
         self._actualizar_status()
         
@@ -528,7 +655,7 @@ class My_Tree(ttk.Frame):
                 ent.config(state="readonly")
 
     def _actualizar_status(self):
-        if not self.b_registro: return
+        if not self.b_fila_d_total: return
         total = len(self.tree.get_children())
         if total == 0:
             self.lbl_status.config(text="0 de 0")
@@ -550,7 +677,7 @@ class My_Tree(ttk.Frame):
         self.tree.selection_set(item_id)
         self.tree.focus(item_id)
         self.tree.see(item_id)
-        self._al_seleccionar()
+        self._accion_al_seleccionar()
 
     def _go_first(self): self._seleccionar_indice(0)
     def _go_last(self): self._seleccionar_indice(len(self.tree.get_children()) - 1)
@@ -583,19 +710,43 @@ class My_Tree(ttk.Frame):
                     return i
         return '_'
 
+    # def _configurar_columnas(self):
+    #     """ Aplica las reglas visuales a las columnas del TreeView """
+    #     cols_a_mostrar = self._obtener_cabeceras_efectivas()
+    #     self.tree.config(columns=tuple(cols_a_mostrar))
+    #     if not cols_a_mostrar:
+    #         self.tree.config(show="") 
+    #     else:
+    #         self.tree.config(show="headings")
+    #         for i, cab in enumerate(cols_a_mostrar):
+    #             self.tree.heading(cols_a_mostrar[i], text=cab, anchor="w")
+    #             # width = tamaño deseable al inicio
+    #             # minwidth = límite antes de activar el scroll horizontal
+    #             # stretch = permiso para expandirse si hay poca data
+    #             self.tree.column(cols_a_mostrar[i], width=100, minwidth=50,stretch=True,anchor="w")
     def _configurar_columnas(self):
         """ Aplica las reglas visuales a las columnas del TreeView """
         cols_a_mostrar = self._obtener_cabeceras_efectivas()
         self.tree.config(columns=tuple(cols_a_mostrar))
-        
         if not cols_a_mostrar:
             self.tree.config(show="") 
         else:
             self.tree.config(show="headings")
             for i, cab in enumerate(cols_a_mostrar):
-                self.tree.heading(cols_a_mostrar[i], text=cab)
-                self.tree.column(cols_a_mostrar[i], width=100, anchor="w")
-
+                self.tree.heading(cols_a_mostrar[i], text=cab, anchor="w")
+                
+                # Ancho basado en contenido, limitado a 200 px para no disparar la ventana
+                ancho_cab = len(cab) * 9
+                ancho_dato = 0
+                if self.datos and len(self.datos) > 0:
+                    primera_fila = self.datos[0]
+                    if isinstance(primera_fila, (list, tuple)) and i < len(primera_fila):
+                        ancho_dato = len(str(primera_fila[i])) * 9
+                
+                width = min(200, max(50, max(ancho_cab, ancho_dato)))
+                
+                self.tree.column(cols_a_mostrar[i], width=width, minwidth=50, stretch=True, anchor="w")
+    
     def _obtener_dimensiones(self, d_trabajo):
         """ Devuelve las dimensiones máximas (max_row, max_col) de la matriz de disposición. """
         if not d_trabajo: 
@@ -606,9 +757,9 @@ class My_Tree(ttk.Frame):
     
     def _obtener_d_trabajo(self, cab_efectivas):
         """ Retorna la matriz de trabajo. Si es {} o [], genera una secuencia hacia abajo. """
-        if self.d_textos == {} or self.d_textos == []:
+        if self.textos == {} or self.textos == []:
             return [[i] for i in range(len(cab_efectivas))]
-        return self.d_textos
+        return self.textos
     
     def _obtener_cabeceras_efectivas(self):
         """ Decide si usar las cabeceras dadas o generar 'col0', 'col1'... """
@@ -619,66 +770,74 @@ class My_Tree(ttk.Frame):
             return [f"col{i}" for i in range(num_cols)]
         return []
 
+    def _on_form_mousewheel(self, event):
+        """Desplaza el canvas del formulario con la rueda del ratón."""
+        if event.delta:
+            self.canvas_form.yview_scroll(int(-1 * (event.delta / 120)), "units")
+        elif event.num == 4:
+            self.canvas_form.yview_scroll(-1, "units")
+        elif event.num == 5:
+            self.canvas_form.yview_scroll(1, "units")
+        return "break"
+
+
+
 # █ ■ █ ■ █ ■ █ ■ █ ■ █ ■ █ ■ █ ■ █ ■ █ ■ █ ■ █ ■ █ ■ █ ■ █ ■ █ ■ █ ■ █ ■ █
-class My_TreeCSV(ttk.Frame):
-    """
-    Macro-Widget compuesto. Hereda de ttk.Frame (o ttk.LabelFrame si hay título).
-    Contiene un My_FileDialog en la parte superior y un My_Tree en la inferior.
-    Carga automáticamente el CSV seleccionado en el TreeView.
-    """
+class My_TreeCSV(My_Tree):
     def __init__(self, parent, 
                 titulo="", 
                 texto_boton="Buscar CSV",   
                 initialdir=None, 
                 entry_width=40,
-                b_botones=True, b_registro=True, d_textos=None, **kwargs):
+                filetypes=None,
+                b_botones_cursor=True, 
+                b_fila_d_total=True, 
+                textos=None,
+                textos_height=120,
+                acciones=None,
+                cabeceras=None,
+                datos=None,
+                **kwargs):
         
-        super().__init__(parent, **kwargs)
+        super().__init__(parent, 
+                         titulo=titulo, 
+                         cabeceras=cabeceras,
+                         b_botones_cursor=b_botones_cursor, 
+                         b_fila_d_total=b_fila_d_total,
+                         textos=textos,
+                         textos_height=textos_height,
+                         acciones=acciones,
+                         datos=datos,
+                         **kwargs)
 
         # ==========================================
-        # 1. CONTENEDOR INTELIGENTE
+        # HEADER SUPERIOR (Delimiter + FileDialog en línea)
         # ==========================================
-        if titulo and titulo.strip() != '':
-            self.box = ttk.LabelFrame(self, text=titulo)
-            self.box.pack(fill="both", expand=True, padx=2, pady=2)
-        else:
-            self.box = self
+        self.frm_header = ttk.Frame(self)
+        self.frm_header.pack(side="top", fill="x", padx=5, pady=(5, 5), before=self.frm_tree)
 
-        # Por defecto, filtramos por CSV
-        # if not filetypes:
-        #     filetypes = [("Archivos CSV", "*.csv"), ("Todos los archivos", "*.*")]
+        # Delimiter pegado a la izquierda
+        frm_delim = ttk.Frame(self.frm_header)
+        ttk.Label(frm_delim, text="Delimiter:", font=("Arial", 10)).pack(side="left")
+        self.entry_delimiter = ttk.Entry(frm_delim, width=3, font=("Arial", 12, "bold"))
+        self.entry_delimiter.insert(0, ",")
+        self.entry_delimiter.pack(side="left", padx=(5, 0))
+        frm_delim.pack(side="left", fill="y")
 
-        # ==========================================
-        # 2. FILE DIALOG (Panel Superior)
-        # ==========================================
+        # FileDialog ocupando el resto del ancho disponible
+        tipos = filetypes if filetypes else [("Archivos CSV", "*.csv")]
         self.file_dialog = My_FileDialog(
-            parent=self.box,
+            parent=self.frm_header,
             texto_boton=texto_boton,
             titulo="", 
             rel_coords="e",
             title_dialog="Seleccionar Archivo CSV",
             initialdir=initialdir,
-            filetypes=[("Archivos CSV","*.csv")],
+            filetypes=tipos,
             entry_width=entry_width,
             command=self._cargar_csv_automatico
         )
-        # Empaquetamos arriba, sin expandir en vertical
-        self.file_dialog.pack(side="top", fill="x", padx=5, pady=(5, 5))
-
-        # ==========================================
-        # 3. TREEVIEW (Panel Inferior)
-        # ==========================================
-        self.tree = My_Tree(
-            parent=self.box,
-            titulo=titulo, 
-            b_botones=b_botones,
-            b_registro=b_registro,
-            d_textos=d_textos
-        )
-        # Empaquetamos debajo, forzando a expandirse en todas direcciones
-        self.tree.pack(side="top", fill="both", expand=True, padx=5, pady=(0, 5))
-
-    # ■■■■ LÓGICA INTERNA AUTOMÁTICA ■■■■
+        self.file_dialog.pack(side="left", fill="x", expand=True, padx=(10, 0))
 
     def _cargar_csv_automatico(self, ruta_fichero):
         """ Se dispara solo cuando el usuario selecciona un archivo en el FileDialog. """
@@ -690,7 +849,26 @@ class My_TreeCSV(ttk.Frame):
         from tkinter import messagebox
 
         try:
-            # 1. Detectamos cabecera
+            # 1. Detectar delimitador automáticamente por muestra
+            delim_detectado = None
+            with open(ruta_fichero, 'r', encoding='utf-8') as f:
+                muestra = f.read(4096)
+                try:
+                    dialecto = csv.Sniffer().sniff(muestra)
+                    delim_detectado = dialecto.delimiter
+                except csv.Error:
+                    pass
+            
+            # 2. Prioridad: Entry del usuario > Detectado > Coma por defecto
+            delim_user = self.entry_delimiter.get().strip()
+            if delim_user:
+                delim = delim_user
+            else:
+                delim = delim_detectado if delim_detectado else ","
+                self.entry_delimiter.delete(0, tk.END)
+                self.entry_delimiter.insert(0, delim)
+
+            # 3. Detectamos cabecera
             tiene_cabecera = True
             with open(ruta_fichero, 'r', encoding='utf-8') as f:
                 muestra = f.read(2048)
@@ -699,34 +877,25 @@ class My_TreeCSV(ttk.Frame):
                 except csv.Error:
                     pass
             
-            # 2. Leemos con Pandas
+            # 4. Leemos con Pandas usando el delimiter elegido
             if tiene_cabecera:
-                df = pd.read_csv(ruta_fichero)
+                df = pd.read_csv(ruta_fichero, delimiter=delim)
                 nuevas_cabeceras = df.columns.tolist()
             else:
-                df = pd.read_csv(ruta_fichero, header=None)
+                df = pd.read_csv(ruta_fichero, header=None, delimiter=delim)
                 nuevas_cabeceras = [f"col{i}" for i in range(df.shape[1])]
             
-            # 3. Inyectamos
+            # 5. Inyectamos directamente en los métodos heredados de My_Tree
             nuevos_datos = df.values.tolist()
-            self.tree.set_feature_names(nuevas_cabeceras)
-            self.tree.load_data(nuevos_datos)
+            self.set_feature_names(nuevas_cabeceras)
+            self.load_data(nuevos_datos)
             
         except Exception as e:
-            from tkinter import messagebox
             messagebox.showerror("Error de lectura", f"No se pudo leer el archivo CSV.\n\nDetalle: {e}")
 
-    # ■■■■ MÉTODOS PÚBLICOS DE PUENTE ■■■■
-    # Exponemos los métodos clave para que interactúes con él fácilmente desde fuera
-    
-    def get_textos(self):
-        """ Devuelve los textos del formulario (si lo hay). """
-        return self.tree.get_textos()
-        
     def get_ruta(self):
         """ Devuelve la ruta seleccionada. """
         return self.file_dialog.get_ruta()
-
 
 # █ ■ █ ■ █ ■ █ ■ █ ■ █ ■ █ ■ █ ■ █ ■ █ ■ █ ■ █ ■ █ ■ █ ■ █ ■ █ ■ █ ■ █ ■ █
 class My_Radio(ttk.Frame):
@@ -803,13 +972,13 @@ class My_Radio(ttk.Frame):
         """ Cambia la selección programáticamente. """
         self.var.set(valor)
 
-    def set_command(self, comando):
+    def set_command(self, callback):
         """ 
         Asigna una función que se disparará automáticamente al cambiar de opción. 
         Ejemplo: mi_radio.set_command(lambda: print(mi_radio.get_valor()))
         """
         for rb in self.radios:
-            rb.config(command=comando)
+            rb.config(command=callback)
     
 
 # █ ■ █ ■ █ ■ █ ■ █ ■ █ ■ █ ■ █ ■ █ ■ █ ■ █ ■ █ ■ █ ■ █ ■ █ ■ █ ■ █ ■ █ ■ █
@@ -1214,31 +1383,18 @@ class Nivel_2:
         # return slide.lbl_texto, slide.obj, slide.lbl_valor
         return slide
 
-    def my_listbox(self, datos=None, b_botones=True, b_registro=True):
+    def my_listbox(self, datos=None, b_botones_cursor=True, b_fila_d_total=True):
         """
         Instancia y devuelve el componente My_Listbox, el cual ya es un Frame.
         """
         # Se lo asignamos directamente al grid (self.frame, que es level_1)
         listbox = My_Listbox(parent=self.frame, 
                             datos=datos, 
-                            b_botones=b_botones, 
-                            b_registro=b_registro)
+                            b_botones_cursor=b_botones_cursor, 
+                            b_fila_d_total=b_fila_d_total)
         # Devolvemos el propio objeto, que es un Frame y será procesado perfectamente por draw()
         return listbox
     
-    def my_tree(self, titulo="", cabeceras=None, datos=None, b_botones=True, b_registro=True, d_textos=None):
-        """
-        Crea un componente TreeView de ttk con opciones b_botones / b_registro /  b_textos
-        """
-        treeview = My_Tree( parent=self.frame,
-                                titulo=titulo, 
-                                cabeceras=cabeceras, 
-                                datos=datos,
-                                d_textos=d_textos,
-                                b_botones=b_botones, b_registro=b_registro
-        )
-        return treeview
-
     def my_radio(self, dicc_radio, titulo="", orientacion="vertical"):
         """
         Crea un componente My_Radio.
@@ -1253,10 +1409,44 @@ class Nivel_2:
         )
         return radio
 
-    def my_tree_csv(self, titulo="", 
-                    texto_boton="Buscar CSV", rel_coords_fd="e", title_dialog="Seleccionar Archivo", 
-                    initialdir=None, filetypes=None, entry_width=40,
-                    cabeceras=None, datos=None, b_botones=True, b_registro=True, d_textos=None):
+    def my_tree(self, titulo="", 
+                    cabeceras=None, 
+                    datos=None, 
+                    b_botones_cursor=True, 
+                    b_fila_d_total=True, 
+                    textos=None, 
+                    textos_height=120,
+                    acciones=None):
+        """
+        Crea un componente TreeView de ttk con opciones b_botones_cursor / b_fila_d_total / textos / acciones
+        """
+        treeview = My_Tree( parent=self.frame,
+                                titulo=titulo, 
+                                cabeceras=cabeceras, 
+                                b_botones_cursor=b_botones_cursor, 
+                                b_fila_d_total=b_fila_d_total,
+                                textos=textos,
+                                textos_height=textos_height,
+                                acciones=acciones, 
+                                datos=datos,
+        )
+        return treeview
+        
+
+    def my_tree_csv(self, 
+                titulo="", 
+                texto_boton="Buscar CSV", 
+                initialdir=None, 
+                filetypes=None, 
+                entry_width=40,
+                cabeceras=None, 
+                datos=None, 
+                b_botones_cursor=True, 
+                b_fila_d_total=True, 
+                textos=None,
+                textos_height=120,
+                acciones=None,
+                ):
         """
         Crea un Macro-Componente: FileDialog + TreeView.
         Carga automáticamente el CSV seleccionado en la tabla y genera el formulario.
@@ -1265,16 +1455,16 @@ class Nivel_2:
             parent=self.frame,
             titulo=titulo,
             texto_boton=texto_boton,
-            # rel_coords_fd=rel_coords_fd,
-            # title_dialog=title_dialog,
             initialdir=initialdir,
-            # filetypes=filetypes,
+            filetypes=filetypes, 
             entry_width=entry_width,
-            # cabeceras=cabeceras,
-            # datos=datos,
-            b_botones=b_botones,
-            b_registro=b_registro,
-            d_textos=d_textos
+            cabeceras=cabeceras, 
+            datos=datos, 
+            b_botones_cursor=b_botones_cursor,
+            b_fila_d_total=b_fila_d_total,
+            textos=textos,
+            textos_height=textos_height,
+            acciones=acciones,
         )
         return nuevo_tree_csv
 

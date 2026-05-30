@@ -7,6 +7,12 @@ import tkinter as tk
 from tkinter import messagebox, filedialog
 import os
 import json
+import pandas as pd
+import csv
+
+def saludar(saludo):
+    """ A Eliminar. Solo de Muestra """
+    print(f"¡Hola! {saludo} Has hecho clic ✔️")
 
 def limpiar_textos(textos):
     """ A Eliminar. Solo de Muestra """
@@ -29,7 +35,7 @@ def chk_estado(estado_checkbox):
         print("El checkbox está DESMARCADO")
 
 
-def act_cargar_archivo(ruta_fichero):
+def accion_file_d_to_treeview(ruta_fichero, my_tree_view):
         # print(fd_dataset.get_ruta() + "-" + fd_dataset.entry.get())
         if not ruta_fichero: 
             return 
@@ -66,8 +72,8 @@ def act_cargar_archivo(ruta_fichero):
             # =========================================================
             nuevos_datos = df.values.tolist()
             # Inyectamos
-            arbol_visor.set_feature_names(nuevas_cabeceras)
-            arbol_visor.load_data(nuevos_datos)
+            my_tree_view.set_feature_names(nuevas_cabeceras)
+            my_tree_view.load_data(nuevos_datos)
             print(f"Carga exitosa: {'Con' if tiene_cabecera else 'Sin'} cabeceras detectadas.")
         except Exception as e:
             print(f"Error al procesar el archivo: {e}")
