@@ -17,18 +17,18 @@ def main():
     # ■■■■ ■■■■ ■■■■ ■■■■ ■■■■ ■■■■ ■■■■ ■■■■ ■■■■ ■■■■ ■■■■ ■■■■ ■■■■ ■■■■ ■■■■ 
     # Configuración de las pestañas a añadir. key es el nombre corto y value es el Título de la UI.
     configuracion_pestanas = {
-        "dat": "Textos y my_listbox",
-        "split": "check|my_radio|combo|my_slide",
-        "alg": "FileDialog",
-        "met": "--",
-        "graf": "--",
-        'tab6': 'my_tree - Sintético.',
-        'tab7': 'my_tree',
+        "dat": "Entry & my_listbox",
+        "split": "my_Slide",
+        "alg": "my_FileDialog",
+        "met": "Varios Widgets",
+        "graf": "my_Radio",
+        'tab6': 'my_tree',
+        'tab7': 'my_tree - Custom',
         'tab8': 'my_treecsv',
     }
     a=1
     b=2
-    TABS = Pestanas_by_Step(ventana, configuracion_pestanas, b_botones_cursor = True, mode_step=False)
+    TABS = Pestanas_by_Step(ventana, configuracion_pestanas, b_botones_cursor = True, mode_step=True)
     TABS.pack(fill="both", expand=True, padx=10, pady=10)
 
     # ■■ ■■ ■■ ■■ ■■ ■■ ■■ ■■ ■■ ■■ ■■ ■■ ■■ ■■ ■■ ■■ ■■ ■■ ■■ ■■ ■■ ■■ ■■ ■■ 
@@ -68,15 +68,11 @@ def main():
     btn_del.config(command=lambda: cmd.limpiar_textos( F1.family.familiares('textos') ))
     btn_add.config(command=lambda: cmd.mostrar_alerta( "Texto de Alerta de Prueba" ))
 
-    # ■■ ■■ ■■ ■■ ■■ ■■ ■■ ■■ ■■ ■■ ■■ ■■ ■■ ■■ ■■ ■■ ■■ ■■ ■■ ■■ ■■ ■■ ■■ ■■ 
+    # ■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■
     # FRAME PARA LA PESTAÑA SPLIT
     F2 = Nivel_2(TABS.get_p('split'), shape="12x6", padx=15, pady=7)    
-    # ■■ ■■ ■■ ■■ ■■ ■■ ■■ ■■ ■■ ■■ ■■ ■■ ■■ ■■ ■■ ■■ ■■ ■■ ■■ ■■ ■■ ■■ ■■ ■■ 
+    # ■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■
 
-    # • checkbutton
-    chk_st = tk.BooleanVar(value=False)
-    texto = "Boton de Check:"
-    checkbox = ttk.Checkbutton( F2.frame, text=texto, variable = chk_st, command=lambda: cmd.chk_estado( chk_st ) )
 
     # • my_slide
     # l_slide, slide, v_slide = F2.my_slide(texto= texto, desde=0, hasta=10, valor_inicial=3,tipo_dato=tk.DoubleVar )
@@ -84,43 +80,22 @@ def main():
     slide_arriba = F2.my_slide(titulo="■ Nivel de Ruido (db)", desde=0, hasta=10, rel_coords="n")
     slide_invisible = F2.my_slide(titulo="", desde=0, hasta=5, rel_coords="s")
 
-    # • my_radio
-    opciones_algoritmo = [
-        {"texto": "Random Forest", "value": 1},
-        {"texto": "XGBoost", "value": 2},
-        {"texto": "Regresión Logística", "value": 3}
-    ]
-    titulo = "Selecciona un Algoritmo"
-    radio_con_titulo = F2.my_radio(titulo=titulo, dicc_radio=opciones_algoritmo, orientacion="vertical" )
-
-    # • my_radio
-    opciones_booleanas = [{"texto": "Sí", "value": True}, {"texto": "No", "value": False}]
-    radio_sin_titulo = F2.my_radio(titulo="", dicc_radio=opciones_booleanas, orientacion="horizontal")
-
-    # • Combo
-    content_combo = ["SVM", "Naivy Bayes", "LDA", "PCA", "Random Forest"]
-    combo = ttk.Combobox(F2.frame, values=content_combo, state="readonly")
-    combo.current(0)
     # ■  MATRIZ
     matrix_F2 = [
-        [checkbox, '+', '+'],                                             
         [] , 
         [slide_derecha, '+', '+', '+'] ,
         [] ,
         [slide_arriba, '+', '+', '+'] ,
         [slide_invisible, '+', '+', '+'] ,
         [ '+', '+', '+', '+', '+', '+'] ,
-        [radio_con_titulo, '_', '_', '_', '_'] ,
-        [radio_sin_titulo] , 
-        [combo] ,
     ]
     # ■  DIBUJO
     F2.draw(matrix = matrix_F2)
 
-    # ■■ ■■ ■■ ■■ ■■ ■■ ■■ ■■ ■■ ■■ ■■ ■■ ■■ ■■ ■■ ■■ ■■ ■■ ■■ ■■ ■■ ■■ ■■ ■■ 
+    # ■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■
     # FRAME PARA LA PESTAÑA ALGORITMOS
     F3 = Nivel_2(TABS.get_p('alg'), shape="6x3", padx=15, pady=20)    
-    # ■■ ■■ ■■ ■■ ■■ ■■ ■■ ■■ ■■ ■■ ■■ ■■ ■■ ■■ ■■ ■■ ■■ ■■ ■■ ■■ ■■ ■■ ■■ ■■ 
+    # ■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■
 
     # filedialog = F3.my_fileDialog(entry_width=35, )
     tit = "■ Configuración del Modelo"
@@ -138,22 +113,55 @@ def main():
     ]
     F3.draw(matrix = matrix_F3)
     
-    # ■■ ■■ ■■ ■■ ■■ ■■ ■■ ■■ ■■ ■■ ■■ ■■ ■■ ■■ ■■ ■■ ■■ ■■ ■■ ■■ ■■ ■■ ■■ ■■ 
+    # ■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■
     # FRAME PARA LA PESTAÑA 'METRICAS'
-    # ■■ ■■ ■■ ■■ ■■ ■■ ■■ ■■ ■■ ■■ ■■ ■■ ■■ ■■ ■■ ■■ ■■ ■■ ■■ ■■ ■■ ■■ ■■ ■■ 
     F4 = Nivel_2(TABS.get_p('met'), shape="6x6", padx=15, pady=7)    
-
-    
-
-    # ■■ ■■ ■■ ■■ ■■ ■■ ■■ ■■ ■■ ■■ ■■ ■■ ■■ ■■ ■■ ■■ ■■ ■■ ■■ ■■ ■■ ■■ ■■ ■■ 
+    # ■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■
+    # • Combo
+    content_combo = ["SVM", "Naivy Bayes", "LDA", "PCA", "Random Forest"]
+    combo = ttk.Combobox(F4.frame, values=content_combo, state="readonly")
+    combo.current(0)
+    # • checkbutton
+    chk_st = tk.BooleanVar(value=False)
+    texto = "Boton de Check:"
+    checkbox = ttk.Checkbutton( F4.frame, text=texto, variable = chk_st, command=lambda: cmd.chk_estado( chk_st ) )
+    matrix_F4 = [
+        [] ,
+        [combo] ,
+        [] ,
+        [checkbox, '+', '+'],                                             
+        [] ,
+    ]
+    F4.draw(matrix = matrix_F4)
+    # ■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■
     # FRAME PARA LA PESTAÑA 'GRAFICOS'
-    # ■■ ■■ ■■ ■■ ■■ ■■ ■■ ■■ ■■ ■■ ■■ ■■ ■■ ■■ ■■ ■■ ■■ ■■ ■■ ■■ ■■ ■■ ■■ ■■ 
-    F5 = Nivel_2(TABS.get_p('graf'), shape="6x6", padx=15, pady=7)    
+    # ■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■
+    F5 = Nivel_2(TABS.get_p('graf'), shape="8x6", padx=15, pady=7)    
+    # • my_radio
+    opciones_algoritmo = [
+        {"texto": "Random Forest", "value": 1},
+        {"texto": "XGBoost", "value": 2},
+        {"texto": "Regresión Logística", "value": 3}
+    ]
+    titulo = "Selecciona un Algoritmo"
+    radio_con_titulo = F5.my_radio(titulo=titulo, dicc_radio=opciones_algoritmo, orientacion="vertical" )
+    # • my_radio
+    opciones_booleanas = [{"texto": "Sí", "value": True}, {"texto": "No", "value": False}]
+    radio_sin_titulo = F5.my_radio(titulo="", dicc_radio=opciones_booleanas, orientacion="horizontal")
 
+    matrix = [
+        [] ,
+        [] ,
+        [radio_con_titulo, '_', '_', '_', '_'] ,
+        [] ,
+        [radio_sin_titulo] , 
+        [] ,
+    ]
+    F5.draw(matrix = matrix)
     
-    # ■■ ■■ ■■ ■■ ■■ ■■ ■■ ■■ ■■ ■■ ■■ ■■ ■■ ■■ ■■ ■■ ■■ ■■ ■■ ■■ ■■ ■■ ■■ ■■ 
-    # FRAME PARA LA PESTAÑA 'Tab6'
-    # ■■ ■■ ■■ ■■ ■■ ■■ ■■ ■■ ■■ ■■ ■■ ■■ ■■ ■■ ■■ ■■ ■■ ■■ ■■ ■■ ■■ ■■ ■■ ■■ 
+    # ■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■
+    # FRAME PARA LA PESTAÑA ''
+    # ■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■
     F6 = Nivel_2(TABS.get_p('tab6'), shape="1x1", padx=15, pady=7)    
 
     # Los datos se pueden sacar de un archivo csv, json, base de datos...
@@ -169,26 +177,20 @@ def main():
     cab = ["ID", "Nombre", "Ape-1", "Ape-2", "Teléfono", "Ciudad"]    
     poscion_textos = [["Nombre", "_", "_"],[],["Ape-1", "+", "Ape-2", "+"],["Ciudad", "+","Teléfono"] ]
     arbol = F6.my_tree(titulo=titulo, cabeceras=cab, datos=datos_ok, textos = poscion_textos )    
-    matrix_F6 = [
+    matrix = [
         [arbol,] ,
     ]
-    F6.draw(matrix = matrix_F6)
+    F6.draw(matrix = matrix)
 
-    # ■■ ■■ ■■ ■■ ■■ ■■ ■■ ■■ ■■ ■■ ■■ ■■ ■■ ■■ ■■ ■■ ■■ ■■ ■■ ■■ ■■ ■■ ■■ ■■ 
-    # FRAME PARA LA PESTAÑA 'Tab7'
-    # ■■ ■■ ■■ ■■ ■■ ■■ ■■ ■■ ■■ ■■ ■■ ■■ ■■ ■■ ■■ ■■ ■■ ■■ ■■ ■■ ■■ ■■ ■■ ■■ 
-    # import pandas as pd
-    # import csv  # Importamos la librería estándar para detectar cabeceras
-    # from tkinter import messagebox
-
+    # ■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■
+    # FRAME PARA LA PESTAÑA ''
+    # ■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■
     F7 = Nivel_2(TABS.get_p('tab7'), shape="2x2", padx=15, pady=7)    
-
     acciones_crud = [
         ("Add", lambda: cmd.saludar("add") ), "+", '_', 
         ("Borrar", lambda: cmd.saludar("borrar") ), '_', 
         ("Actulizar", lambda: cmd.saludar("update") ), "+"
     ]
-
     # • My_Tree sin textos y vacío para cargar.    
     # arbol_visor = F7.my_tree(titulo="■ Visor Dinámico de Datos")
     titulo="■ Visor Dinámico de Datos"
@@ -211,20 +213,20 @@ def main():
     ]
     F7.draw(matrix=matrix)
 
-    # ■■ ■■ ■■ ■■ ■■ ■■ ■■ ■■ ■■ ■■ ■■ ■■ ■■ ■■ ■■ ■■ ■■ ■■ ■■ ■■ ■■ ■■ ■■ ■■ 
+    # ■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■
     # FRAME PARA LA PESTAÑA 'Tab7'
     F8 = Nivel_2(TABS.get_p('tab8'), shape="2x2", padx=15, pady=20)    
-    # ■■ ■■ ■■ ■■ ■■ ■■ ■■ ■■ ■■ ■■ ■■ ■■ ■■ ■■ ■■ ■■ ■■ ■■ ■■ ■■ ■■ ■■ ■■ ■■ 
+    # ■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■
     titulo = "■ Visor dinamico de csv con My_Tree y FileDialog integrado ■"
-    poscion_textos = [[1, "+", "_"],[],[2, "+", 3, "+"],[0,] ]
+    poscion_textos = [[1, "+", "+", '+'],[2, "+", 3, "+"],[5, '+', '+'], ['>>>'] ]
     acciones_crud = [
         ("Add", lambda: cmd.saludar("add") ), "+", '_', 
         ("Borrar", lambda: cmd.saludar("borrar") ), '_', 
         ("Actulizar", lambda: cmd.saludar("update") ), "+"
     ]
     tree_csv = F8.my_tree_csv(titulo = titulo, 
-                                textos={}, 
-                                textos_height=200,                                 
+                                textos=poscion_textos, 
+                                textos_height=150,                                 
                                 acciones = acciones_crud,
                                 )                     
     matrix = [

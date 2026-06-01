@@ -6,7 +6,7 @@ class Pestanas_by_Step(ttk.Frame):
     """Notebook secuencial configurable mediante un diccionario {clave: titulo}
     Permite avanzar y bloquear pestañas tanto por código (claves) como por interfaz (índices).
     """
-    def __init__(self, contenedor, configuracion_pestanas, b_botones_cursor=True, mode_step=True):
+    def __init__(self, contenedor, configuracion_pestanas, b_botones_cursor=True, mode_step=True, padx=5):
         """ 
         contenedor: el contenedor del Frame de Pestañas.
         configuracion_pestanas: un diccionario key = slug:str , value = 'Titulo de las Pestañas'
@@ -19,14 +19,33 @@ class Pestanas_by_Step(ttk.Frame):
         if not configuracion_pestanas:
             raise ValueError("El diccionario de configuración no puede estar vacío.")
 
-        # Guardamos el modo en la instancia
+        # ■ Estilo de las pestañas (opcional)
+        style = ttk.Style()
+        # Estilo General
+        style.configure("Custom.TNotebook", 
+                        # background="#2d2d2d", 
+                        padding=padx, 
+                        )
+        # Estilo de las pestañas
+        style.configure("Custom.TNotebook.Tab",
+                background="#404040",   # Color de pestaña inactiva
+                foreground="#3E2723",     # Color del texto
+                padding=[10, 5],        # Margen interno [horizontal, vertical]
+                font=("Helvetica", 9, "bold"))
+
+        # Configurar el comportamiento dinámico (Estados: seleccionado o al pasar el mouse)
+        # style.map("Custom.TNotebook.Tab",
+        #         background=[("selected", "orange"), ("active", "#007acc")],
+        #         foreground=[("selected", "white")])
+
+        # ■ Guardamos el modo en la instancia
         self.mode_step = mode_step
 
         # Separamos las claves y los títulos manteniendo el orden estricto de inserción
         self.claves  = list(configuracion_pestanas.keys())
         self.titulos = list(configuracion_pestanas.values())
         
-        self.notebook = ttk.Notebook(self)
+        self.notebook = ttk.Notebook(self, style="Custom.TNotebook")
         self.notebook.pack(fill="both", expand=True)
 
         self.pestanas = []
@@ -40,52 +59,45 @@ class Pestanas_by_Step(ttk.Frame):
             self.blok_from(1) 
             
             # Vinculamos el evento de protección para que no salten a pestañas bloqueadas
-            self.notebook.bind("<<NotebookTabChanged>>", self._on_tab_changed)
+            # self.notebook.bind("<<NotebookTabChanged>>", self._on_tab_changed)
             
             # --- PANEL DE CONTROL GLOBAL (Solo si b_botones_cursor es True y estamos en modo paso a paso) ---
             if b_botones_cursor:
                 panel_control = ttk.Frame(self)
                 panel_control.pack(fill="x", padx=10, pady=10)
 
+                # • Botón Avanzar
                 self.btn_avanzar = ttk.Button(
                     panel_control,
                     text="Validar y Avanzar ➡️",
                     command=lambda: self.go_next(self.notebook.index("current"))
                 )
                 self.btn_avanzar.pack(side="right")
+                
+                # • Botón Bloquear
+                self.btn_bloquear = ttk.Button(
+                    panel_control,
+                    text="🔒 Bloquear Siguientes",
+                    command=lambda: self.blok_from(self.notebook.index("current") + 1)
+                )
+                self.btn_bloquear.pack(side="right", padx=5)
         else:
             # Modo libre: Todas las pestañas están desbloqueadas desde el principio,
             # no hay capturador de eventos de bloqueo ni botonera inferior.
             pass
-
-
-    # def __init__(self, contenedor, configuracion_pestanas, b_botones_cursor=True):
-    #     """ 
-    #     contenedor: el contenedor del Frame de Pestañas.
-    #     configuracion_pestanas: un diccionario key = slug:str , value = 'Titulo de las Pestañas'
-    #     b_botones_cursor: True, muestra botones para avanzar y bloquear. False no los muestra.
-    #     """
-    #     super().__init__(contenedor)
-
-    #     if not configuracion_pestanas:
-    #         raise ValueError("El diccionario de configuración no puede estar vacío.")
-
-    #     # Separamos las claves y los títulos manteniendo el orden estricto de inserción
-    #     self.claves  = list(configuracion_pestanas.keys())
-    #     self.titulos = list(configuracion_pestanas.values())
-        
-    #     self.notebook = ttk.Notebook(self)
-    #     self.notebook.pack(fill="both", expand=True)
-
-    #     self.pestanas = []
-    #     self._crear_pestanas()
-    #     self.blok_from(1) # Bloquea todo menos la primera al iniciar
-
+    
     #     # ■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■
     #     # PANEL DE CONTROL INTEGRADO (opcional)
     #     # ■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■
     #     if b_botones_cursor:
     #         self._crear_panel_control()
+
+    def _on_tab_changed(self, event):
+        """ 
+        Método disparado cada vez que el usuario cambia de pestaña.
+        De momento no hace nada, pero puedes añadir lógica de validación aquí.
+        """
+        pass
 
     def _crear_pestanas(self):
         """ ■ Crea las pestañas introducidas en la configuración. """
@@ -95,7 +107,8 @@ class Pestanas_by_Step(ttk.Frame):
             self.pestanas.append(pestana)
 
     def get_p(self, identificador):
-        """■ Devuelve el Frame de la pestaña buscando por índice (int), clave (str) o título (str)."""
+        """ ■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■ 
+        Devuelve el Frame de la pestaña buscando por índice (int), clave (str) o título (str)."""
         # 1. Búsqueda por Índice Numérico (ideal para controles dinámicos de la interfaz)
         if isinstance(identificador, int):
             if 0 <= identificador < len(self.pestanas):
@@ -115,7 +128,9 @@ class Pestanas_by_Step(ttk.Frame):
         raise ValueError(f"No se encontró la pestaña con el identificador: '{identificador}'")
 
     def go_next(self, identificador_actual):
-        """ ■ Avanza a la siguiente pestaña basándose en cualquier identificador de la actual."""
+        """ ■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■
+        ■ Avanza a la siguiente pestaña basándose en cualquier identificador de la actual.
+        """
         pestana_actual = self.get_p(identificador_actual)
         indice_actual = self.pestanas.index(pestana_actual)
         
@@ -126,7 +141,9 @@ class Pestanas_by_Step(ttk.Frame):
             self.notebook.select(siguiente_pestana)
 
     def blok_from(self, indice_inicial):
-        """ ■ Bloquea todas las pestañas a partir del índice numérico indicado."""
+        """ ■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■
+        ■ Bloquea todas las pestañas a partir del índice numérico indicado.
+        """
         for indice in range(indice_inicial, len(self.pestanas)):
             self.notebook.tab(self.pestanas[indice], state="disabled")
     

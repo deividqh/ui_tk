@@ -461,7 +461,9 @@ class My_Tree(ttk.Frame):
     # ■■■■ MÉTODOS PÚBLICOS ■■■■
 
     def set_feature_names(self, cabeceras):
-        """ Valida y asigna nuevas cabeceras """
+        """ 
+        Valida y asigna nuevas cabeceras 
+        """
         if not isinstance(cabeceras, (list, tuple)):
             raise ValueError("Las cabeceras deben ser una lista o tupla.")
         if not all(isinstance(c, str) for c in cabeceras):
@@ -471,27 +473,14 @@ class My_Tree(ttk.Frame):
         self._configurar_columnas()
         self._construir_formulario()
 
-    # def load_data(self, datos: list):
-    #     """ Limpia e inserta datos. """
-    #     self.datos = datos if datos else []
-    #     self._configurar_columnas()  
-    #     self._construir_formulario() 
-        
-    #     for item in self.tree.get_children():
-    #         self.tree.delete(item)
-            
-    #     for d in self.datos:
-    #         valores = d if isinstance(d, (list, tuple)) else (d,)
-    #         self.tree.insert("", tk.END, values=valores)
-            
-    #     self._actualizar_status()
 
     def load_data(self, datos: list):
-        """ Limpia e inserta datos. """
-        # ■ Congelar el tamaño actual de la ventana raíz para evitar 
-        #   que el Treeview empuje la ventana al cargar datos anchos.
-        toplevel = self.winfo_toplevel()
-        toplevel.update_idletasks()         #  fuerza a Tkinter a actualizar los elementos visuales pendientes de la pantalla sin procesar otros eventos del usuario  
+        """ 
+        Inserta datos en el TreeView... antes Limpia el TreeView.
+        """
+        # ■ Congelar el tamaño actual de la ventana raíz para evitar que el Treeview empuje la ventana al cargar datos anchos.
+        # toplevel = self.winfo_toplevel()
+        # toplevel.update_idletasks()         #  fuerza a Tkinter a actualizar los elementos visuales pendientes de la pantalla sin procesar otros eventos del usuario  
         # toplevel.geometry(toplevel.winfo_geometry())
 
         self.datos = datos if datos else []
@@ -507,7 +496,7 @@ class My_Tree(ttk.Frame):
             
         self._actualizar_status()
 
-    def get_textos(self) -> list:
+    def get_entry_values(self) -> list:
         """ 
         Devuelve un array con los valores actuales de los Entry.
         Garantiza que el orden sea exactamente el de lectura de tu matriz (fila por fila)
@@ -710,22 +699,11 @@ class My_Tree(ttk.Frame):
                     return i
         return '_'
 
-    # def _configurar_columnas(self):
-    #     """ Aplica las reglas visuales a las columnas del TreeView """
-    #     cols_a_mostrar = self._obtener_cabeceras_efectivas()
-    #     self.tree.config(columns=tuple(cols_a_mostrar))
-    #     if not cols_a_mostrar:
-    #         self.tree.config(show="") 
-    #     else:
-    #         self.tree.config(show="headings")
-    #         for i, cab in enumerate(cols_a_mostrar):
-    #             self.tree.heading(cols_a_mostrar[i], text=cab, anchor="w")
-    #             # width = tamaño deseable al inicio
-    #             # minwidth = límite antes de activar el scroll horizontal
-    #             # stretch = permiso para expandirse si hay poca data
-    #             self.tree.column(cols_a_mostrar[i], width=100, minwidth=50,stretch=True,anchor="w")
+    
     def _configurar_columnas(self):
-        """ Aplica las reglas visuales a las columnas del TreeView """
+        """ 
+        Aplica las reglas visuales a las columnas del TreeView 
+        """
         cols_a_mostrar = self._obtener_cabeceras_efectivas()
         self.tree.config(columns=tuple(cols_a_mostrar))
         if not cols_a_mostrar:
@@ -758,8 +736,13 @@ class My_Tree(ttk.Frame):
     def _obtener_d_trabajo(self, cab_efectivas):
         """ Retorna la matriz de trabajo. Si es {} o [], genera una secuencia hacia abajo. """
         if self.textos == {} or self.textos == []:
+            if not cab_efectivas:
+                return []
             return [[i] for i in range(len(cab_efectivas))]
-        return self.textos
+        pass
+        total_columnas = len(cab_efectivas)
+        if self.textos:
+            return self._procesar_textos_dinamicos(self.textos, total_columnas)
     
     def _obtener_cabeceras_efectivas(self):
         """ Decide si usar las cabeceras dadas o generar 'col0', 'col1'... """
@@ -779,6 +762,48 @@ class My_Tree(ttk.Frame):
         elif event.num == 5:
             self.canvas_form.yview_scroll(1, "units")
         return "break"
+
+    def _procesar_textos_dinamicos(self, textos_originales, total_columnas):
+        """
+        Lee la matriz y si encuentra '>>>', autocompleta el resto de índices
+        pendientes (hasta total_columnas) en una sola columna hacia abajo.
+        """
+        if not textos_originales:
+            return []
+            
+        textos_procesados = []
+        max_idx = -1
+        encontrado_cierre = False
+
+        for fila in textos_originales:
+            fila_procesada = []
+            for elem in fila:
+                if elem == '>>>':
+                    encontrado_cierre = True
+                    break
+                
+                fila_procesada.append(elem)
+                
+                # Rastreamos el índice máximo declarado antes del '>>>'
+                if isinstance(elem, int):
+                    if elem > max_idx:
+                        max_idx = elem
+                elif isinstance(elem, str) and elem.isdigit():
+                    if int(elem) > max_idx:
+                        max_idx = int(elem)
+
+            if fila_procesada or (not encontrado_cierre and not fila_procesada):
+                textos_procesados.append(fila_procesada)
+                
+            if encontrado_cierre:
+                break
+
+        # Autocompletado dinámico en base a las cabeceras actuales
+        if encontrado_cierre:
+            for i in range(max_idx + 1, total_columnas):
+                textos_procesados.append([i])
+                
+        return textos_procesados
 
 
 
