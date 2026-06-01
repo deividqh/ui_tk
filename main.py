@@ -28,7 +28,7 @@ def main():
     }
     a=1
     b=2
-    TABS = Pestanas_by_Step(ventana, configuracion_pestanas, b_botones_cursor = True, mode_step=True)
+    TABS = Pestanas_by_Step(ventana, configuracion_pestanas, b_botones_cursor = True, mode_step=False)
     TABS.pack(fill="both", expand=True, padx=10, pady=10)
 
     # ■■ ■■ ■■ ■■ ■■ ■■ ■■ ■■ ■■ ■■ ■■ ■■ ■■ ■■ ■■ ■■ ■■ ■■ ■■ ■■ ■■ ■■ ■■ ■■ 
@@ -81,7 +81,7 @@ def main():
     slide_invisible = F2.my_slide(titulo="", desde=0, hasta=5, rel_coords="s")
 
     # ■  MATRIZ
-    matrix_F2 = [
+    matrix = [
         [] , 
         [slide_derecha, '+', '+', '+'] ,
         [] ,
@@ -90,7 +90,7 @@ def main():
         [ '+', '+', '+', '+', '+', '+'] ,
     ]
     # ■  DIBUJO
-    F2.draw(matrix = matrix_F2)
+    F2.draw(matrix = matrix)
 
     # ■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■
     # FRAME PARA LA PESTAÑA ALGORITMOS
@@ -103,7 +103,7 @@ def main():
     fd_s = F3.my_fileDialog(titulo=tit,texto_boton=txt,rel_coords="w",filetypes=[("Archivos JSON", "*.json")] )
     fd_w = F3.my_fileDialog(texto_boton="Buscar CSV",rel_coords="w", filetypes=[("Archivos CSV", "*.csv")] )
     fd_e = F3.my_fileDialog(texto_boton="📂 Seleccionar Dataset",rel_coords="e",entry_width=35)
-    matrix_F3 = [
+    matrix = [
         [] ,
         [fd_s, '+', '+'] ,                                             
         [] ,
@@ -111,7 +111,7 @@ def main():
         [] ,
         [fd_w, '+', '+'] ,
     ]
-    F3.draw(matrix = matrix_F3)
+    F3.draw(matrix = matrix)
     
     # ■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■
     # FRAME PARA LA PESTAÑA 'METRICAS'
@@ -125,14 +125,14 @@ def main():
     chk_st = tk.BooleanVar(value=False)
     texto = "Boton de Check:"
     checkbox = ttk.Checkbutton( F4.frame, text=texto, variable = chk_st, command=lambda: cmd.chk_estado( chk_st ) )
-    matrix_F4 = [
+    matrix = [
         [] ,
         [combo] ,
         [] ,
         [checkbox, '+', '+'],                                             
         [] ,
     ]
-    F4.draw(matrix = matrix_F4)
+    F4.draw(matrix = matrix)
     # ■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■
     # FRAME PARA LA PESTAÑA 'GRAFICOS'
     # ■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■

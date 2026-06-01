@@ -70,6 +70,7 @@ def accion_file_d_to_treeview(ruta_fichero, my_tree_view):
             # =========================================================
             # 3. EXTRAER DATOS E INYECTAR EN LA UI
             # =========================================================
+            
             nuevos_datos = df.values.tolist()
             # Inyectamos
             my_tree_view.set_feature_names(nuevas_cabeceras)
@@ -78,3 +79,9 @@ def accion_file_d_to_treeview(ruta_fichero, my_tree_view):
         except Exception as e:
             print(f"Error al procesar el archivo: {e}")
             messagebox.showerror("Error de lectura", f"No se pudo leer el archivo CSV.\n\nDetalle: {e}")
+
+def _congela_tam(ventana):
+    # ■ Congelar el tamaño actual de la ventana raíz para evitar que el Treeview empuje la ventana al cargar datos anchos.
+    toplevel = ventana.winfo_toplevel()
+    toplevel.update_idletasks()         #  fuerza a Tkinter a actualizar los elementos visuales pendientes de la pantalla sin procesar otros eventos del usuario  
+    toplevel.geometry(toplevel.winfo_geometry())

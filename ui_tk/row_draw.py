@@ -519,6 +519,48 @@ class My_Tree(ttk.Frame):
                     
         return valores
 
+    # ■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■         
+    def get_cursor(self, indice_tv=None):
+        """
+        Devuelve la información de las filas del Treeview según el índice proporcionado.
+        
+        - indice_tv = None: Devuelve la fila seleccionada por el usuario en la UI.
+        - indice_tv = -1: Devuelve toda la matriz de datos cargada en el Treeview.
+        - indice_tv = int: Devuelve la fila correspondiente a ese índice si existe, o [].
+        - indice_tv = slice: Devuelve un rango de filas.
+
+        # Así llamas a un índice normal:
+        fila = mi_arbol.get_cursor(3)
+        # Así llamas al rango de la fila 3 a la 5:
+        rango_filas = mi_arbol.get_cursor(slice(3, 6))
+        """
+        # 1. Caso None: Fila donde está posicionado/seleccionado el usuario
+        if indice_tv is None:
+            seleccion = self.tree.selection()
+            if seleccion:
+                return list(self.tree.item(seleccion[0])['values'])
+            return []
+            
+        # Obtenemos todos los identificadores de fila actuales del Treeview
+        hijos = self.tree.get_children()
+        
+        # 2. Caso -1: Devuelve toda la matriz de datos
+        if indice_tv == -1:
+            return [list(self.tree.item(h)['values']) for h in hijos]
+            
+        # 3. Caso Slice: Devuelve un rango (ej: de la 3 a la 5)
+        if isinstance(indice_tv, slice):
+            return [list(self.tree.item(h)['values']) for h in hijos[indice_tv]]
+            
+        # 4. Caso número específico (índice concreto)
+        if isinstance(indice_tv, int):
+            if 0 <= indice_tv < len(hijos):
+                return list(self.tree.item(hijos[indice_tv])['values'])
+            else:
+                return []
+                
+        return []
+
     # ■■■■ LÓGICA PRIVADA ■■■■
 
     def _construir_formulario(self):
@@ -1259,15 +1301,15 @@ class Nivel_2:
         """
         self._draw_map = []
         try:
-            for row_idx, row_data in enumerate(matrix):
-                if self._skip_row(row_data, row_idx):
+            for i, row_data in enumerate(matrix):
+                if self._skip_row(row_data, i):
                     continue
                 pass
                 col_idx = 0
                 placed = []     # Tracking interno para colspan
                 for item in row_data:
                     if self._is_empty_cell(item):
-                        placed.append(self._celda_vacia(row_idx, col_idx))
+                        placed.append(self._celda_vacia(i, col_idx))
                     elif item == "+":
                         self._colspan(placed)
                     else:
@@ -1276,12 +1318,12 @@ class Nivel_2:
                         # (ej. tk.Widget, QWidget, o tu propia clase padre).
                         if not isinstance(item, tk.Widget):
                             # raise TypeError(
-                            #     f"Tipo de dato inválido en fila {row_idx}, columna {col_idx}. "
+                            #     f"Tipo de dato inválido en fila {i}, columna {col_idx}. "
                             #     f"Se esperaba un Widget, pero se recibió: {type(item).__name__} (Valor: {item})"
                             # )
                             continue
                         
-                        placed.append(self._widget_real(item, row_idx, col_idx))
+                        placed.append(self._widget_real(item, i, col_idx))
                     col_idx += 1
             return self
         except TypeError as te:
@@ -1294,6 +1336,39 @@ class Nivel_2:
             print(f"[Error Inesperado en draw]: Ha ocurrido un fallo general: {e}")
             raise
 
+#     def draw(self, matrix):
+#         """ 
+#           • if not fila: Detecta cuando introduces []. Utiliza getattr(self, 'pady', 0) 
+#             por si acaso la clase Nivel_2 no tuviera definido el atributo pady en algún caso raro, 
+#             evitando así que el programa se cuelgue y dándole el tamaño de separación estándar.
+#           • if len(fila) == 1 and isinstance(fila[0], int): Detecta cuando introduces algo como [16]. 
+#             Identifica que la lista tiene exactamente un elemento y que es un número entero.
+#           • self.frame.grid_rowconfigure(f, minsize=...) Le dice al gestor grid de Tkinter que la fila f 
+#             debe tener como mínimo esos píxeles de alto, generando el hueco perfecto.
+#          """
+
+#         for f, fila in enumerate(matrix):
+#             # =========================================================
+#             # 1. NUEVA LÓGICA: Detección de filas vacías o espaciadores
+#             # =========================================================
+            
+#             # Caso A: Fila vacía [] -> Usa el pady de la clase (o 0 si no tiene)
+#             if not fila:
+#                 alto = getattr(self, 'pady', 0) # Recoge self.pady de forma segura
+#                 self.frame.grid_rowconfigure(f, minsize=alto)
+#                 continue # Saltamos a la siguiente fila sin hacer nada más
+                
+#             # Caso B: Fila con un solo número ej: [16], [3] -> Usa ese número como píxeles de alto
+#             if len(fila) == 1 and isinstance(fila[0], int):
+#                 self.frame.grid_rowconfigure(f, minsize=fila[0])
+#                 continue # Saltamos a la siguiente fila
+            
+            # =========================================================
+            # ... RESTO DE TU LÓGICA NORMAL PARA POSICIONAR WIDGETS ...
+            # =========================================================
+            for c, widget in enumerate(fila):
+                # (aquí sigue tu código que procesa "+", "_", etc. y hace el widget.grid(...))
+                pass
     # ■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■ 
     # ■ MÉTODOS MODULARES (KISS)
     # ■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■ 
