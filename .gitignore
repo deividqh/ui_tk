@@ -1,0 +1,13 @@
+# Python (Archivos temporales y caché)
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Configuración del editor (VS Code)
+.vscode/
+
+# Entornos virtuales
+.venv/
+venv/
+env/
+ENV/
