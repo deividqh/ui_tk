@@ -491,8 +491,8 @@ class My_Tree(ttk.Frame):
         # ■ Congelar el tamaño actual de la ventana raíz para evitar 
         #   que el Treeview empuje la ventana al cargar datos anchos.
         toplevel = self.winfo_toplevel()
-        toplevel.update_idletasks()
-        toplevel.geometry(toplevel.winfo_geometry())
+        toplevel.update_idletasks()         #  fuerza a Tkinter a actualizar los elementos visuales pendientes de la pantalla sin procesar otros eventos del usuario  
+        # toplevel.geometry(toplevel.winfo_geometry())
 
         self.datos = datos if datos else []
         self._configurar_columnas()  
@@ -541,9 +541,9 @@ class My_Tree(ttk.Frame):
             return
             
         cab_efectivas = self._obtener_cabeceras_efectivas()
-        if not cab_efectivas: 
-            self.frm_form_container.pack_forget()
-            return
+        # if not cab_efectivas: 
+        #     self.frm_form_container.pack_forget()
+        #     return
         
         # ■ Empaquetado controlado: si es la primera vez y las acciones ya están visibles,
         # nos colocamos antes que ellas para mantener el orden lógico (formulario arriba, botones abajo).
@@ -840,14 +840,22 @@ class My_TreeCSV(My_Tree):
         self.file_dialog.pack(side="left", fill="x", expand=True, padx=(10, 0))
 
     def _cargar_csv_automatico(self, ruta_fichero):
-        """ Se dispara solo cuando el usuario selecciona un archivo en el FileDialog. """
-        if not ruta_fichero: 
-            return 
-            
+        """ Se dispara solo cuando el usuario selecciona un archivo en el FileDialog. 
+        
+        
+        toplevel = self.winfo_toplevel()
+        toplevel.update_idletasks()         #  fuerza a Tkinter a actualizar los elementos visuales pendientes de la pantalla sin procesar otros eventos del usuario  
+        toplevel.geometry(toplevel.winfo_geometry())
+        """
         import pandas as pd
         import csv
         from tkinter import messagebox
-
+        # ■ 
+        if (not  ruta_fichero or 
+                isinstance(ruta_fichero, str) == False or 
+                ruta_fichero.strip() == ""): 
+            return 
+        # ■ 
         try:
             # 1. Detectar delimitador automáticamente por muestra
             delim_detectado = None
@@ -887,8 +895,15 @@ class My_TreeCSV(My_Tree):
             
             # 5. Inyectamos directamente en los métodos heredados de My_Tree
             nuevos_datos = df.values.tolist()
+        
+            toplevel = self.winfo_toplevel()
+            toplevel.update_idletasks()         #  fuerza a Tkinter a actualizar los elementos visuales pendientes de la pantalla sin procesar otros eventos del usuario  
+            toplevel.geometry(toplevel.winfo_geometry())
+        
             self.set_feature_names(nuevas_cabeceras)
             self.load_data(nuevos_datos)
+
+            
             
         except Exception as e:
             messagebox.showerror("Error de lectura", f"No se pudo leer el archivo CSV.\n\nDetalle: {e}")

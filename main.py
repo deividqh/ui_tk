@@ -17,14 +17,14 @@ def main():
     # ■■■■ ■■■■ ■■■■ ■■■■ ■■■■ ■■■■ ■■■■ ■■■■ ■■■■ ■■■■ ■■■■ ■■■■ ■■■■ ■■■■ ■■■■ 
     # Configuración de las pestañas a añadir. key es el nombre corto y value es el Título de la UI.
     configuracion_pestanas = {
-        "dat": "Datos",
-        "split": "Split",
-        "alg": "Algoritmo/Modelo",
-        "met": "Métricas",
-        "graf": "Gráficas",
-        'tab6': 'Tab 6',
-        'tab7': 'Tab 7',
-        'tab8': 'Tab 8',
+        "dat": "Textos y my_listbox",
+        "split": "check|my_radio|combo|my_slide",
+        "alg": "FileDialog",
+        "met": "--",
+        "graf": "--",
+        'tab6': 'my_tree - Sintético.',
+        'tab7': 'my_tree',
+        'tab8': 'my_treecsv',
     }
     a=1
     b=2
