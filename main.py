@@ -8,11 +8,16 @@ from ui_tk.row_draw import Nivel_2
 import logica_ui_tk as cmd
 
 def main():
-    """ Quiero poner una de pestañas y en cada pestaña un Frame al menos de prueba """
-
+    
     ventana = tk.Tk()
     ventana.title("Sistema de Pestañas Secuenciales")
-    # ventana.geometry("680x350")
+
+    # CONSEJO: No poner geometry para fijar y que se acoplen los widgets al tamaño natural de su contenido. 
+    # ventana.geometry("900x600")
+    
+    DIEZ = 10
+    VEINTE = 20
+    CUARENTA = 40
     
     # ■■■■ ■■■■ ■■■■ ■■■■ ■■■■ ■■■■ ■■■■ ■■■■ ■■■■ ■■■■ ■■■■ ■■■■ ■■■■ ■■■■ ■■■■ 
     # Configuración de las pestañas a añadir. key es el nombre corto y value es el Título de la UI.
@@ -31,10 +36,11 @@ def main():
     TABS = Pestanas_by_Step(ventana, configuracion_pestanas, b_botones_cursor = True, mode_step=False)
     TABS.pack(fill="both", expand=True, padx=10, pady=10)
 
-    # ■■ ■■ ■■ ■■ ■■ ■■ ■■ ■■ ■■ ■■ ■■ ■■ ■■ ■■ ■■ ■■ ■■ ■■ ■■ ■■ ■■ ■■ ■■ ■■ 
+    # ■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■
+    # ■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■
     # FRAME PARA LA PESTAÑA DATOS
-    F1 = Nivel_2(TABS.get_p('dat'), shape="5x6", padx=15, pady=7)     
-    # ■■ ■■ ■■ ■■ ■■ ■■ ■■ ■■ ■■ ■■ ■■ ■■ ■■ ■■ ■■ ■■ ■■ ■■ ■■ ■■ ■■ ■■ ■■ ■■ 
+    F1 = Nivel_2(TABS.get_p('dat'), shape="10x6", padx=15, pady=7)     
+    # ■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■
     # ■ WIDGETS
     lbl_nom  = tk.Label(F1.frame, text='Nombre: ', anchor='w')
     txt_nom  = tk.Entry(F1.frame)    
@@ -50,10 +56,12 @@ def main():
 
     # ■  MATRIZ
     matrix = [
+        [VEINTE] ,                                             
         [lbl_nom,  txt_nom, "+", "+", "+", "_"       ],
+        [DIEZ],                                             
         [lbl_ape1, txt_ape1, "_", lbl_ape2, txt_ape2 ],   
         ['-' , listbox, '+', '+', '+', '-'],              
-        [],                                             
+        [CUARENTA],                                             
         [btn_add,  btn_upt, "+", "_", btn_del ],   
     ]
     # ■  DIBUJO
@@ -69,29 +77,30 @@ def main():
     btn_add.config(command=lambda: cmd.mostrar_alerta( "Texto de Alerta de Prueba" ))
 
     # ■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■
-    # FRAME PARA LA PESTAÑA SPLIT
-    F2 = Nivel_2(TABS.get_p('split'), shape="12x6", padx=15, pady=7)    
     # ■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■
-
-
+    # FRAME PARA LA PESTAÑA SPLIT
+    F2 = Nivel_2(TABS.get_p('split'), shape="10x6", padx=15, pady=7)    
+    # ■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■
     # • my_slide
     # l_slide, slide, v_slide = F2.my_slide(texto= texto, desde=0, hasta=10, valor_inicial=3,tipo_dato=tk.DoubleVar )
     slide_derecha = F2.my_slide(titulo="■ Ratio de Aprendizaje", desde=0, hasta=100, rel_coords="e")
     slide_arriba = F2.my_slide(titulo="■ Nivel de Ruido (db)", desde=0, hasta=10, rel_coords="n")
-    slide_invisible = F2.my_slide(titulo="", desde=0, hasta=5, rel_coords="s")
+    slide_sin_marco = F2.my_slide(titulo="", desde=0, hasta=5, rel_coords="s")
 
     # ■  MATRIZ
     matrix = [
-        [] , 
+        [32] , 
         [slide_derecha, '+', '+', '+'] ,
-        [] ,
+        [CUARENTA] ,
         [slide_arriba, '+', '+', '+'] ,
-        [slide_invisible, '+', '+', '+'] ,
+        [CUARENTA] ,
+        [slide_sin_marco, '+', '+', '+'] ,
         [ '+', '+', '+', '+', '+', '+'] ,
     ]
     # ■  DIBUJO
     F2.draw(matrix = matrix)
 
+    # ■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■
     # ■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■
     # FRAME PARA LA PESTAÑA ALGORITMOS
     F3 = Nivel_2(TABS.get_p('alg'), shape="6x3", padx=15, pady=20)    
@@ -104,15 +113,16 @@ def main():
     fd_w = F3.my_fileDialog(texto_boton="Buscar CSV",rel_coords="w", filetypes=[("Archivos CSV", "*.csv")] )
     fd_e = F3.my_fileDialog(texto_boton="📂 Seleccionar Dataset",rel_coords="e",entry_width=35)
     matrix = [
-        [] ,
+        [VEINTE] ,
         [fd_s, '+', '+'] ,                                             
-        [] ,
+        [CUARENTA] ,
         [fd_e, '+', '+'] ,
-        [] ,
+        [CUARENTA] ,
         [fd_w, '+', '+'] ,
     ]
     F3.draw(matrix = matrix)
     
+    # ■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■
     # ■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■
     # FRAME PARA LA PESTAÑA 'METRICAS'
     F4 = Nivel_2(TABS.get_p('met'), shape="6x6", padx=15, pady=7)    
@@ -126,13 +136,14 @@ def main():
     texto = "Boton de Check:"
     checkbox = ttk.Checkbutton( F4.frame, text=texto, variable = chk_st, command=lambda: cmd.chk_estado( chk_st ) )
     matrix = [
-        [] ,
+        [CUARENTA] ,
         [combo] ,
-        [] ,
+        [CUARENTA] ,
         [checkbox, '+', '+'],                                             
         [] ,
     ]
     F4.draw(matrix = matrix)
+    # ■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■
     # ■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■
     # FRAME PARA LA PESTAÑA 'GRAFICOS'
     # ■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■
@@ -150,15 +161,15 @@ def main():
     radio_sin_titulo = F5.my_radio(titulo="", dicc_radio=opciones_booleanas, orientacion="horizontal")
 
     matrix = [
-        [] ,
-        [] ,
+        [VEINTE] ,
         [radio_con_titulo, '_', '_', '_', '_'] ,
-        [] ,
+        [VEINTE] ,
         [radio_sin_titulo] , 
         [] ,
     ]
     F5.draw(matrix = matrix)
     
+    # ■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■
     # ■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■
     # FRAME PARA LA PESTAÑA ''
     # ■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■
@@ -182,6 +193,7 @@ def main():
     ]
     F6.draw(matrix = matrix)
 
+    # ■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■
     # ■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■
     # FRAME PARA LA PESTAÑA ''
     # ■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■
@@ -214,6 +226,7 @@ def main():
     F7.draw(matrix=matrix)
 
     # ■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■
+    # ■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■
     # FRAME PARA LA PESTAÑA 'Tab7'
     F8 = Nivel_2(TABS.get_p('tab8'), shape="2x2", padx=15, pady=20)    
     # ■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■
@@ -229,10 +242,8 @@ def main():
                                 textos_height=150,                                 
                                 acciones = acciones_crud,
                                 )                     
-    matrix = [
-        [tree_csv, "+"]
-    ]
-    F8.draw(matrix=matrix)
+    matrix = [ [tree_csv, "+"] ]
+    F8.draw( matrix = matrix )
 
     # • • • — — — • • •
     ventana.mainloop()

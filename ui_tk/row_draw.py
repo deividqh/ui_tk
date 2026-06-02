@@ -1282,7 +1282,7 @@ class Nivel_2:
             raise ValueError(f"La fila {row} no existe.")
         added_widgets = []
         for column, item in enumerate(items):
-            if self._is_empty_cell(item):
+            if item is None or item in ["_", "-"]:
                 continue
             widget = item
             widget.grid_forget()
@@ -1290,9 +1290,8 @@ class Nivel_2:
             added_widgets.append(widget)
         return added_widgets
     
-    def _is_empty_cell(self, item):
-        return item is None or item == "_" or item == '-' 
     
+    # ■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■
     def draw(self, matrix):
         """
         • Recibe una matriz de widgets (todos hijos de level_1).
@@ -1308,69 +1307,38 @@ class Nivel_2:
                 col_idx = 0
                 placed = []     # Tracking interno para colspan
                 for item in row_data:
-                    if self._is_empty_cell(item):
+
+                    if item is None or item in ["_", "-"]:
                         placed.append(self._celda_vacia(i, col_idx))
-                    elif item == "+":
+                    
+                    elif isinstance(item, int):
+                        # ■ Modifica la altura de la fila y crea celda vacía 
+                        self.level_1.grid_rowconfigure(i, minsize=item)
+                        placed.append(self._celda_vacia(i, col_idx, alto=item))
+
+                    elif item in ["+", "x"]:
                         self._colspan(placed)
+
                     else:
-                        # VALIDACIÓN DE TIPO
-                        # Nota: Cambia 'ClaseBaseWidget' por la clase real de tu framework 
-                        # (ej. tk.Widget, QWidget, o tu propia clase padre).
                         if not isinstance(item, tk.Widget):
-                            # raise TypeError(
-                            #     f"Tipo de dato inválido en fila {i}, columna {col_idx}. "
-                            #     f"Se esperaba un Widget, pero se recibió: {type(item).__name__} (Valor: {item})"
-                            # )
                             continue
-                        
+
                         placed.append(self._widget_real(item, i, col_idx))
+
                     col_idx += 1
             return self
         except TypeError as te:
             # Aquí capturamos el error de tipo que lanzamos arriba (o cualquier otro TypeError)
             print(f"[Error de Tipo en draw]: {te}")
-            # Puedes decidir si quieres silenciar el error, registrarlo en un log, o relanzarlo:
-            raise 
+            return self 
         except Exception as e:
             # Captura de seguridad para cualquier otro error inesperado (ej. matrix no es iterable)
             print(f"[Error Inesperado en draw]: Ha ocurrido un fallo general: {e}")
-            raise
+            return self
 
-#     def draw(self, matrix):
-#         """ 
-#           • if not fila: Detecta cuando introduces []. Utiliza getattr(self, 'pady', 0) 
-#             por si acaso la clase Nivel_2 no tuviera definido el atributo pady en algún caso raro, 
-#             evitando así que el programa se cuelgue y dándole el tamaño de separación estándar.
-#           • if len(fila) == 1 and isinstance(fila[0], int): Detecta cuando introduces algo como [16]. 
-#             Identifica que la lista tiene exactamente un elemento y que es un número entero.
-#           • self.frame.grid_rowconfigure(f, minsize=...) Le dice al gestor grid de Tkinter que la fila f 
-#             debe tener como mínimo esos píxeles de alto, generando el hueco perfecto.
-#          """
-
-#         for f, fila in enumerate(matrix):
-#             # =========================================================
-#             # 1. NUEVA LÓGICA: Detección de filas vacías o espaciadores
-#             # =========================================================
             
-#             # Caso A: Fila vacía [] -> Usa el pady de la clase (o 0 si no tiene)
-#             if not fila:
-#                 alto = getattr(self, 'pady', 0) # Recoge self.pady de forma segura
-#                 self.frame.grid_rowconfigure(f, minsize=alto)
-#                 continue # Saltamos a la siguiente fila sin hacer nada más
-                
-#             # Caso B: Fila con un solo número ej: [16], [3] -> Usa ese número como píxeles de alto
-#             if len(fila) == 1 and isinstance(fila[0], int):
-#                 self.frame.grid_rowconfigure(f, minsize=fila[0])
-#                 continue # Saltamos a la siguiente fila
-            
-            # =========================================================
-            # ... RESTO DE TU LÓGICA NORMAL PARA POSICIONAR WIDGETS ...
-            # =========================================================
-            for c, widget in enumerate(fila):
-                # (aquí sigue tu código que procesa "+", "_", etc. y hace el widget.grid(...))
-                pass
     # ■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■ 
-    # ■ MÉTODOS MODULARES (KISS)
+    # ■ MÉTODOS PRIVADOS DE DIBUJO 
     # ■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■ 
 
     def _skip_row(self, row_data, row_idx):
@@ -1378,19 +1346,20 @@ class Nivel_2:
         if row_data is None or (isinstance(row_data, (list, tuple)) and len(row_data) == 0):
             return True
         if not isinstance(row_data, (list, tuple)):
+            print(f"⚠️ [Aviso Nivel_2]: Fila {row_idx} omitida. Se esperaba lista o tupla, pero se recibió '{type(row_data).__name__}'.")
             return True
         if row_idx not in self.level_2:
-            raise IndexError(
-                f"La fila {row_idx} no existe en la estructura. "
-                f"Filas disponibles: 0..{self.filas-1}."
-            )
+            print(f"⚠️ [Aviso Nivel_2]: Fila {row_idx} omitida. No existe en la estructura (Filas reservadas: 0..{self.filas-1}).")
+            return True
         if self.level_2[row_idx]['type'] == 'spacer':
             return True
         return False
 
-    def _celda_vacia(self, row_idx, col_idx):
+    def _celda_vacia(self, row_idx, col_idx, alto=None):
         """ ■ Crea un frame vacío, lo posiciona y registra el tracking."""
-        empty_frame = tk.Frame(self.level_1, width=self.padx)
+        alto_calc = alto if alto is not None else self.pady
+
+        empty_frame = tk.Frame(self.level_1, width=self.padx, height=alto_calc)
         empty_frame.grid(in_=self.level_1, row=row_idx, column=col_idx, sticky="we")
 
         self._draw_map.append({
@@ -1424,7 +1393,9 @@ class Nivel_2:
                     break
 
     def _widget_real(self, item, row_idx, col_idx):
-        """ ■ Posiciona un widget real en el grid, registra el tracking y automatiza pesos."""
+        """ ■ Posiciona un widget real en el grid, registra el tracking y automatiza pesos.
+            • Usa el parametro 'in_' de 'grid'.
+        """
         item.grid_forget()
         
         comportamiento_sticky = "we"
