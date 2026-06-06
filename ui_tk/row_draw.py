@@ -887,7 +887,8 @@ class My_TreeCSV(My_Tree):
         frm_delim = ttk.Frame(self.frm_header)
         ttk.Label(frm_delim, text="Delimiter:", font=("Arial", 10)).pack(side="left")
         self.entry_delimiter = ttk.Entry(frm_delim, width=3, font=("Arial", 12, "bold"))
-        self.entry_delimiter.insert(0, ",")
+        # self.entry_delimiter.insert(0, ",")
+        self.entry_delimiter.insert(0, "")
         self.entry_delimiter.pack(side="left", padx=(5, 0))
         frm_delim.pack(side="left", fill="y")
 
@@ -908,25 +909,35 @@ class My_TreeCSV(My_Tree):
 
     def _cargar_csv_automatico(self, ruta_fichero):
         """ Se dispara solo cuando el usuario selecciona un archivo en el FileDialog. 
-        
-        
-        toplevel = self.winfo_toplevel()
-        toplevel.update_idletasks()         #  fuerza a Tkinter a actualizar los elementos visuales pendientes de la pantalla sin procesar otros eventos del usuario  
-        toplevel.geometry(toplevel.winfo_geometry())
         """
         import pandas as pd
         import csv
         from tkinter import messagebox
+        import tkinter as tk
+        
         # ■ 
-        if (not  ruta_fichero or 
+        if (not ruta_fichero or 
                 isinstance(ruta_fichero, str) == False or 
                 ruta_fichero.strip() == ""): 
             return 
         # ■ 
         try:
+            # ---> NUEVO: Detección básica de encoding
+            encodings_a_probar = ['utf-8', 'utf-16', 'latin1', 'cp1252']
+            encoding_detectado = 'utf-8'
+            
+            for enc in encodings_a_probar:
+                try:
+                    with open(ruta_fichero, 'r', encoding=enc) as f:
+                        f.read(1024) # Intenta leer un trozo
+                    encoding_detectado = enc
+                    break # Si no falla, encontramos el correcto y salimos del bucle
+                except UnicodeDecodeError:
+                    continue
+
             # 1. Detectar delimitador automáticamente por muestra
             delim_detectado = None
-            with open(ruta_fichero, 'r', encoding='utf-8') as f:
+            with open(ruta_fichero, 'r', encoding=encoding_detectado) as f:
                 muestra = f.read(4096)
                 try:
                     dialecto = csv.Sniffer().sniff(muestra)
@@ -945,33 +956,35 @@ class My_TreeCSV(My_Tree):
 
             # 3. Detectamos cabecera
             tiene_cabecera = True
-            with open(ruta_fichero, 'r', encoding='utf-8') as f:
+            with open(ruta_fichero, 'r', encoding=encoding_detectado) as f:
                 muestra = f.read(2048)
                 try:
                     tiene_cabecera = csv.Sniffer().has_header(muestra)
                 except csv.Error:
                     pass
             
-            # 4. Leemos con Pandas usando el delimiter elegido
+            # 4. Leemos con Pandas usando el delimiter Y EL ENCODING elegido
             if tiene_cabecera:
-                df = pd.read_csv(ruta_fichero, delimiter=delim)
+                # Usamos engine='python' para evitar warnings raros con algunos delimitadores
+                df = pd.read_csv(ruta_fichero, delimiter=delim, encoding=encoding_detectado, engine='python')
                 nuevas_cabeceras = df.columns.tolist()
             else:
-                df = pd.read_csv(ruta_fichero, header=None, delimiter=delim)
+                df = pd.read_csv(ruta_fichero, header=None, delimiter=delim, encoding=encoding_detectado, engine='python')
                 nuevas_cabeceras = [f"col{i}" for i in range(df.shape[1])]
+            
+            # Convertimos valores nulos (NaN) de Pandas a texto vacío para que Tkinter no falle
+            df = df.fillna("")
             
             # 5. Inyectamos directamente en los métodos heredados de My_Tree
             nuevos_datos = df.values.tolist()
         
             toplevel = self.winfo_toplevel()
-            toplevel.update_idletasks()         #  fuerza a Tkinter a actualizar los elementos visuales pendientes de la pantalla sin procesar otros eventos del usuario  
+            toplevel.update_idletasks()         # fuerza a Tkinter a actualizar los elementos visuales  
             toplevel.geometry(toplevel.winfo_geometry())
         
             self.set_feature_names(nuevas_cabeceras)
             self.load_data(nuevos_datos)
 
-            
-            
         except Exception as e:
             messagebox.showerror("Error de lectura", f"No se pudo leer el archivo CSV.\n\nDetalle: {e}")
 
